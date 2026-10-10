@@ -1,0 +1,188 @@
+import { renderAppShell, renderModal } from "../components/AppShell.js";
+import { renderDashboard } from "../screens/DashboardScreen.js";
+import { renderLibrary } from "../screens/LibraryScreen.js";
+import { renderPractice } from "../screens/PracticeScreen.js";
+import { renderStats } from "../screens/StatsScreen.js";
+import { renderSettings } from "../screens/SettingsScreen.js";
+import { createRouter } from "./router.js";
+import { createStore } from "./store.js";
+import { PracticeSession } from "./practiceSession.js";
+import { $, $$, normalize } from "../utils/dom.js";
+import { speakJapanese } from "../services/speech.js";
+
+export function createApp(root) {
+  const store = createStore();
+  const router = createRouter(render);
+  const practice = new PracticeSession(store);
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: "Tất cả", category: "all" }, sidebarCollapsed: localStorage.getItem("kumo-sidebar-collapsed") === "true", toastTimer: null };
+
+  function getScreen() {
+    const view = router.getCurrentView();
+    const state = store.getState();
+    const words = store.getWords();
+    if (view === "dashboard") return renderDashboard({ state, words });
+    if (view === "library") return renderLibrary({ words, state, query: ui.libraryQuery, filter: ui.libraryFilter, category: ui.libraryCategory });
+    if (view === "practice") return renderPractice({ mode: practice.mode, stage: practice.render(), filters: ui.practice, filteredCount: practice.getFilteredCount(), score: state.sessionScore });
+    if (view === "stats") return renderStats({ state, words });
+    return renderSettings({ state });
+  }
+
+  function render() {
+    store.prepareDailyChallenge({ notifyChanges: false });
+    const state = store.getState();
+    root.innerHTML = renderAppShell({ view: router.getCurrentView(), state, screen: getScreen(), wordCount: store.getWords().length, sidebarCollapsed: ui.sidebarCollapsed }) + renderModal();
+    const score = $("[data-session-score]");
+    if (score) score.textContent = `${state.sessionScore} điểm`;
+  }
+
+  function toast(message) {
+    const element = $("#toast");
+    if (!element) return;
+    element.textContent = message;
+    element.classList.add("visible");
+    clearTimeout(ui.toastTimer);
+    ui.toastTimer = setTimeout(() => element.classList.remove("visible"), 2500);
+  }
+
+  function startPractice(mode) {
+    if (mode === "dailyQuiz") store.prepareDailyChallenge({ notifyChanges: false });
+    practice.setFilters(ui.practice);
+    practice.setMode(mode);
+    router.navigate("practice");
+  }
+
+  function handleQuizAnswer(button) {
+    const result = practice.answerQuiz(button.dataset.answer);
+    if (!result) return;
+    render();
+    toast(result.completed ? "Hoàn thành bài hôm nay! Chuỗi " + store.getState().streak + " ngày" : result.correct ? "Chính xác! +10 điểm" : "Đáp án đúng: " + result.word.meaning);
+    if (result.completed) return;
+    setTimeout(() => { practice.next(); render(); }, 1100);
+  }
+
+  function handleTypingCheck() {
+    const input = $("#typing-input");
+    if (!input || input.disabled) return;
+    const word = practice.getTypingWord();
+    const answer = normalize(input.value);
+    const correct = [word.romaji, word.kana, word.japanese].some(value => normalize(value) === answer);
+    input.disabled = true;
+    store.markWord(word.id, correct ? "mastered" : "reviewed");
+    toast(correct ? `Chính xác! ${word.kana} · +10 điểm` : `Đáp án: ${word.kana} (${word.romaji})`);
+    setTimeout(() => { practice.next(); render(); }, 1200);
+  }
+
+  function handleReview(review) {
+    const flashcard = $("#flashcard");
+    const flashcardShell = flashcard?.closest(".flashcard-shell");
+    if (!flashcard || !flashcardShell || flashcardShell.classList.contains("is-exiting")) return;
+    const result = review.dataset.review;
+    const wordId = practice.getCurrentWord()?.id;
+    flashcardShell.classList.add("is-exiting", result === "again" ? "slide-left" : "slide-right");
+    $$(".review-button").forEach(button => {
+      button.disabled = true;
+      button.classList.add(button === review ? "review-choice" : "review-muted");
+    });
+    setTimeout(() => {
+      practice.reviewFlashcard(result, wordId);
+    }, 280);
+  }
+
+  function handleClick(event) {
+    const nav = event.target.closest("[data-view]");
+    if (nav) { router.navigate(nav.dataset.view); return; }
+
+    const start = event.target.closest("[data-start]");
+    if (start) { startPractice(start.dataset.start); return; }
+
+    const mode = event.target.closest("[data-mode]");
+    if (mode) { startPractice(mode.dataset.mode); return; }
+
+    const practiceFilter = event.target.closest("[data-practice-filter]");
+    if (practiceFilter) {
+      ui.practice[practiceFilter.dataset.practiceFilter === "category" ? "category" : "lesson"] = practiceFilter.dataset.value;
+      practice.setFilters(ui.practice);
+      render();
+      return;
+    }
+
+    const filter = event.target.closest("[data-filter]");
+    if (filter) { ui.libraryFilter = filter.dataset.filter; render(); return; }
+
+    const category = event.target.closest("[data-category]");
+    if (category) { ui.libraryCategory = category.dataset.category; render(); return; }
+
+    const speaker = event.target.closest("[data-speak]");
+    if (speaker) { speakJapanese(speaker.dataset.speak, store.getState().soundEnabled); return; }
+
+    if (event.target.id === "word-modal") { $("#word-modal")?.classList.remove("visible"); return; }
+
+    const action = event.target.closest("[data-action]");
+    if (action) {
+      const name = action.dataset.action;
+      if (name === "toggle-menu") { $("#sidebar")?.classList.toggle("open"); return; }
+      if (name === "toggle-sidebar") { ui.sidebarCollapsed = !ui.sidebarCollapsed; localStorage.setItem("kumo-sidebar-collapsed", String(ui.sidebarCollapsed)); render(); return; }
+      if (name === "toggle-theme") { store.updateSettings({ theme: store.getState().theme === "dark" ? "light" : "dark" }); return; }
+      if (name === "open-modal") { $("#word-modal")?.classList.add("visible"); return; }
+      if (name === "close-modal") { $("#word-modal")?.classList.remove("visible"); return; }
+      if (name === "flip-card") { $("#flashcard")?.classList.toggle("flipped"); return; }
+      if (name === "check-typing") { handleTypingCheck(); return; }
+      if (name === "typing-hint") { const word = practice.getTypingWord(); toast(`Gợi ý: ${word.romaji.slice(0, Math.max(2, Math.floor(word.romaji.length / 2)))}...`); return; }
+      if (name === "skip-typing") { practice.next(); render(); return; }
+      if (name === "restart-match") { practice.match = null; render(); return; }
+      if (name === "reset-progress") { if (window.confirm("Bạn có chắc muốn đặt lại tiến độ?")) { store.reset(); toast("Đã đặt lại tiến độ"); } return; }
+    }
+
+    if (event.target.closest("#flashcard") && !event.target.closest("[data-speak]")) { $("#flashcard")?.classList.toggle("flipped"); return; }
+
+    const review = event.target.closest("[data-review]");
+    if (review) { handleReview(review); return; }
+
+    const answer = event.target.closest("[data-answer]");
+    if (answer) { handleQuizAnswer(answer); return; }
+
+    const tile = event.target.closest("[data-tile]");
+    if (tile) { const result = practice.selectMatch(tile.dataset.tile); if (result.status === "correct") toast("Ghép đúng! +10 điểm"); if (result.status === "wrong") toast("Chưa đúng, thử lại nhé"); render(); return; }
+  }
+
+  function handleInput(event) {
+    if (event.target.id === "word-search") { ui.libraryQuery = event.target.value; const caret = event.target.selectionStart; render(); const search = $("#word-search"); search?.focus(); search?.setSelectionRange(caret, caret); }
+    if (event.target.id === "practice-search") { ui.practice.query = event.target.value; const caret = event.target.selectionStart; practice.setFilters(ui.practice); render(); const search = $("#practice-search"); search?.focus(); search?.setSelectionRange(caret, caret); }
+  }
+
+  function handleChange(event) {
+    const filter = event.target.closest("[data-filter]");
+    if (filter) { ui.libraryFilter = filter.dataset.filter; render(); return; }
+    const setting = event.target.closest("[data-setting]");
+    if (setting) { const value = setting.type === "checkbox" ? setting.checked : Number(setting.value); store.updateSettings({ [setting.dataset.setting]: value }); }
+  }
+
+  function handleSubmit(event) {
+    if (event.target.id !== "word-form") return;
+    event.preventDefault();
+    const values = new FormData(event.target);
+    const lesson = Number(String(values.get("lesson")).replace(/\D/g, ""));
+    store.addWord({ id: Date.now(), category: "noun", japanese: values.get("japanese"), kana: values.get("kana"), romaji: values.get("romaji"), meaning: values.get("meaning"), lesson, lessonTitle: `Bài ${lesson}`, baseForm: "", example: "" });
+    $("#word-modal")?.classList.remove("visible");
+    toast("Đã thêm từ mới vào thư viện");
+  }
+
+  function handleKeydown(event) {
+    if (router.getCurrentView() !== "practice") return;
+    if (practice.mode === "flashcards") {
+      if (event.code === "Space") { event.preventDefault(); $("#flashcard")?.classList.toggle("flipped"); }
+      if (event.key === "ArrowLeft") { event.preventDefault(); $("[data-review=\"again\"]")?.click(); }
+      if (event.key === "ArrowRight") { event.preventDefault(); $("[data-review=\"know\"]")?.click(); }
+    }
+    if (practice.mode === "typing" && event.key === "Enter") handleTypingCheck();
+    if (practice.mode === "quiz" && /^[1-4]$/.test(event.key)) $$(".answer-option")[Number(event.key) - 1]?.click();
+  }
+
+  root.addEventListener("click", handleClick);
+  root.addEventListener("input", handleInput);
+  root.addEventListener("change", handleChange);
+  root.addEventListener("submit", handleSubmit);
+  document.addEventListener("keydown", handleKeydown);
+  store.subscribe(render);
+  render();
+}

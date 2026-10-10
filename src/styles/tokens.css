@@ -1,0 +1,21 @@
+:root {
+  --bg: #0d1429;
+  --bg-deep: #091021;
+  --panel: #151e38;
+  --panel-2: #1b2646;
+  --panel-3: #212e54;
+  --line: rgba(139, 157, 220, .17);
+  --text: #f5f7ff;
+  --muted: #98a6d0;
+  --muted-2: #7180ab;
+  --lavender: #aab5ff;
+  --purple: #8c79ff;
+  --orange: #ff9a70;
+  --yellow: #f3ce55;
+  --blue: #77bbff;
+  --green: #73d0b5;
+  --danger: #ff7d91;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --shadow: 0 20px 60px rgba(0, 0, 0, .18);
+}

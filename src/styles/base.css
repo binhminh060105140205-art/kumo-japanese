@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: "DM Sans", system-ui, sans-serif; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; opacity: .25; pointer-events: none; background-image: linear-gradient(rgba(135, 151, 221, .1) 1px, transparent 1px), linear-gradient(90deg, rgba(135, 151, 221, .1) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to bottom, black, transparent 85%); }
+body, button, input, select { font-size: 14px; }
+button, input, select { font: inherit; }
+button { border: 0; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--lavender); outline-offset: 3px; }
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3, .brand strong, .stat-card strong, .jp-cell strong { font-family: "Space Grotesk", system-ui, sans-serif; }
+h1 { margin-bottom: 8px; font-size: clamp(32px, 4vw, 48px); line-height: 1.05; letter-spacing: -.045em; }
+h1 span { color: var(--lavender); }
+h2 { margin-bottom: 0; font-size: 21px; line-height: 1.1; letter-spacing: -.025em; }
+.muted { color: var(--muted); }
+.lead { margin-bottom: 0; font-size: 15px; }
+.eyebrow { margin: 0 0 8px; color: var(--orange); font-size: 10px; font-weight: 700; letter-spacing: .18em; }
