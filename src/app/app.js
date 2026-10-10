@@ -14,7 +14,7 @@ export function createApp(root) {
   const store = createStore();
   const router = createRouter(render);
   const practice = new PracticeSession(store);
-  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: "Tất cả", category: "all" }, sidebarCollapsed: localStorage.getItem("kumo-sidebar-collapsed") === "true", toastTimer: null };
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all" }, sidebarCollapsed: localStorage.getItem("kumo-sidebar-collapsed") === "true", toastTimer: null };
 
   function getScreen() {
     const view = router.getCurrentView();
@@ -33,6 +33,7 @@ export function createApp(root) {
     root.innerHTML = renderAppShell({ view: router.getCurrentView(), state, screen: getScreen(), wordCount: store.getWords().length, sidebarCollapsed: ui.sidebarCollapsed }) + renderModal();
     const score = $("[data-session-score]");
     if (score) score.textContent = `${state.sessionScore} điểm`;
+    if (router.getCurrentView() === "practice" && practice.mode === "typing") setTimeout(() => $("#typing-input")?.focus(), 0);
   }
 
   function toast(message) {
@@ -57,7 +58,7 @@ export function createApp(root) {
     render();
     toast(result.completed ? "Hoàn thành bài hôm nay! Chuỗi " + store.getState().streak + " ngày" : result.correct ? "Chính xác! +10 điểm" : "Đáp án đúng: " + result.word.meaning);
     if (result.completed) return;
-    setTimeout(() => { practice.next(); render(); }, 1100);
+    setTimeout(() => { practice.next(); render(); }, 550);
   }
 
   function handleTypingCheck() {
@@ -66,10 +67,9 @@ export function createApp(root) {
     const word = practice.getTypingWord();
     const answer = normalize(input.value);
     const correct = [word.romaji, word.kana, word.japanese].some(value => normalize(value) === answer);
-    input.disabled = true;
+    practice.next();
     store.markWord(word.id, correct ? "mastered" : "reviewed");
     toast(correct ? `Chính xác! ${word.kana} · +10 điểm` : `Đáp án: ${word.kana} (${word.romaji})`);
-    setTimeout(() => { practice.next(); render(); }, 1200);
   }
 
   function handleReview(review) {
@@ -85,7 +85,7 @@ export function createApp(root) {
     });
     setTimeout(() => {
       practice.reviewFlashcard(result, wordId);
-    }, 280);
+    }, 140);
   }
 
   function handleClick(event) {
@@ -100,7 +100,15 @@ export function createApp(root) {
 
     const practiceFilter = event.target.closest("[data-practice-filter]");
     if (practiceFilter) {
-      ui.practice[practiceFilter.dataset.practiceFilter === "category" ? "category" : "lesson"] = practiceFilter.dataset.value;
+      if (practiceFilter.dataset.practiceFilter === "category") {
+        ui.practice.category = practiceFilter.dataset.value;
+      } else {
+        const selectedLessons = new Set(Array.isArray(ui.practice.lesson) ? ui.practice.lesson : ui.practice.lesson === "Tất cả" ? [] : [ui.practice.lesson]);
+        if (practiceFilter.dataset.value === "Tất cả") selectedLessons.clear();
+        else if (selectedLessons.has(practiceFilter.dataset.value)) selectedLessons.delete(practiceFilter.dataset.value);
+        else selectedLessons.add(practiceFilter.dataset.value);
+        ui.practice.lesson = [...selectedLessons];
+      }
       practice.setFilters(ui.practice);
       render();
       return;
@@ -127,7 +135,6 @@ export function createApp(root) {
       if (name === "close-modal") { $("#word-modal")?.classList.remove("visible"); return; }
       if (name === "flip-card") { $("#flashcard")?.classList.toggle("flipped"); return; }
       if (name === "check-typing") { handleTypingCheck(); return; }
-      if (name === "typing-hint") { const word = practice.getTypingWord(); toast(`Gợi ý: ${word.romaji.slice(0, Math.max(2, Math.floor(word.romaji.length / 2)))}...`); return; }
       if (name === "skip-typing") { practice.next(); render(); return; }
       if (name === "restart-match") { practice.match = null; render(); return; }
       if (name === "reset-progress") { if (window.confirm("Bạn có chắc muốn đặt lại tiến độ?")) { store.reset(); toast("Đã đặt lại tiến độ"); } return; }

@@ -56,9 +56,9 @@ export class PracticeSession {
   }
 
   getFilteredWords() {
-    const lessonNumber = this.filters.lesson === "Tất cả" ? null : Number(this.filters.lesson.replace("Bài ", ""));
+    const selectedLessons = new Set(Array.isArray(this.filters.lesson) ? this.filters.lesson : this.filters.lesson && this.filters.lesson !== "Tất cả" ? [this.filters.lesson] : []);
     const query = normalize(this.filters.query);
-    return this.store.getWords().filter(word => (this.filters.category === "all" || word.category === this.filters.category) && (lessonNumber === null || word.lesson === lessonNumber) && normalize(word.japanese + " " + word.kana + " " + word.romaji + " " + word.meaning).includes(query));
+    return this.store.getWords().filter(word => (this.filters.category === "all" || word.category === this.filters.category) && (!selectedLessons.size || selectedLessons.has(`Bài ${word.lesson}`)) && normalize(word.japanese + " " + word.kana + " " + word.romaji + " " + word.meaning).includes(query));
   }
 
   getFilteredCount() {
@@ -149,7 +149,7 @@ export class PracticeSession {
       if (match.matched.length === match.words.length) match.won = true;
     }
     const result = { status: correct ? "correct" : "wrong", won: match.won };
-    setTimeout(() => { match.selected = []; }, correct ? 240 : 560);
+    setTimeout(() => { match.selected = []; }, correct ? 120 : 280);
     return result;
   }
 }
