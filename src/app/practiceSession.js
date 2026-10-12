@@ -61,22 +61,20 @@ export class PracticeSession {
   }
 
   refreshWordPool() {
-    const matchingWords = this.getFilteredWords().filter(word => !this.store.getState().mastered.includes(word.id));
+    const matchingWords = this.getFilteredWords();
     const limit = Number(this.filters.wordLimit) || 0;
     this.wordPool = limit > 0 ? shuffle(matchingWords).slice(0, limit) : [...matchingWords];
   }
 
   resetFlashcardSession() {
-    const mastered = new Set(this.store.getState().mastered);
-    const selectedWords = this.wordPool.filter(word => !mastered.has(word.id));
+    const selectedWords = this.wordPool;
     this.flashcardQueue = shuffle(selectedWords);
     this.flashcardTotal = selectedWords.length;
     this.flashcardCompleted = selectedWords.length === 0;
   }
 
   getWords() {
-    const state = this.store.getState();
-    return this.wordPool.filter(word => !state.mastered.includes(word.id));
+    return this.wordPool;
   }
 
   getFilteredWords() {
@@ -90,8 +88,7 @@ export class PracticeSession {
   }
 
   getAvailableFilteredCount() {
-    const mastered = new Set(this.store.getState().mastered);
-    return this.getFilteredWords().filter(word => !mastered.has(word.id)).length;
+    return this.getFilteredCount();
   }
 
   getCurrentWord() {
