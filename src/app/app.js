@@ -14,7 +14,7 @@ export function createApp(root) {
   const store = createStore();
   const router = createRouter(render);
   const practice = new PracticeSession(store);
-  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all" }, sidebarCollapsed: localStorage.getItem("kumo-sidebar-collapsed") === "true", toastTimer: null };
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all" }, toastTimer: null };
 
   function getScreen() {
     const view = router.getCurrentView();
@@ -30,7 +30,7 @@ export function createApp(root) {
   function render() {
     store.prepareDailyChallenge({ notifyChanges: false });
     const state = store.getState();
-    root.innerHTML = renderAppShell({ view: router.getCurrentView(), state, screen: getScreen(), wordCount: store.getWords().length, sidebarCollapsed: ui.sidebarCollapsed }) + renderModal();
+    root.innerHTML = renderAppShell({ view: router.getCurrentView(), state, screen: getScreen(), wordCount: store.getWords().length }) + renderModal();
     const score = $("[data-session-score]");
     if (score) score.textContent = `${state.sessionScore} điểm`;
     if (router.getCurrentView() === "practice" && practice.mode === "typing") setTimeout(() => $("#typing-input")?.focus(), 0);
@@ -135,8 +135,6 @@ export function createApp(root) {
     const action = event.target.closest("[data-action]");
     if (action) {
       const name = action.dataset.action;
-      if (name === "toggle-menu") { $("#sidebar")?.classList.toggle("open"); return; }
-      if (name === "toggle-sidebar") { ui.sidebarCollapsed = !ui.sidebarCollapsed; localStorage.setItem("kumo-sidebar-collapsed", String(ui.sidebarCollapsed)); render(); return; }
       if (name === "toggle-theme") { store.updateSettings({ theme: store.getState().theme === "dark" ? "light" : "dark" }); return; }
       if (name === "open-modal") { $("#word-modal")?.classList.add("visible"); return; }
       if (name === "close-modal") { $("#word-modal")?.classList.remove("visible"); return; }

@@ -2,7 +2,6 @@ import { renderModeCard } from "../components/ModeCard.js";
 import { escapeHtml } from "../utils/dom.js";
 
 export function renderDashboard({ state, words }) {
-  const mastered = state.mastered.length;
   const studyWords = words.filter(word => word.category !== "other" && !state.mastered.includes(word.id)).slice(0, 4);
   const dailyAnswered = Math.min(5, state.dailyChallenge?.answered || 0);
   const dailyCompleted = Boolean(state.dailyChallenge?.completed);
@@ -11,7 +10,6 @@ export function renderDashboard({ state, words }) {
    <div class="welcome-row"><div><p class="eyebrow">${formatCurrentDate()}</p><h1>Hôm nay học gì, <span>Bình Minh?</span></h1><p class="muted lead">Mỗi ngày một bài kiểm tra 5 từ ngẫu nhiên để giữ chuỗi học.</p></div><button class="primary-button" data-start="dailyQuiz"><span>▶</span> ${dailyCompleted ? "Xem kết quả hôm nay" : "Làm bài hôm nay"}</button></div>
     <div class="stats-grid">
      ${statCard("♨", "Chuỗi ngày học", `${state.streak} ngày`, "Hoàn thành đủ 5 câu để cộng 1", "orange")}
-      ${statCard("◒", "Từ đã thuộc", mastered, `trên tổng số ${words.length} từ`, "purple", `${Math.round(mastered / words.length * 100)}%`)}
       ${statCard("◷", "Thời gian học", "24 phút", "Hôm nay", "blue")}
     </div>
     <div class="dashboard-grid">
