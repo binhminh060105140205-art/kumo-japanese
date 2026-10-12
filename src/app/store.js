@@ -32,10 +32,13 @@ function readState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved) return structuredClone(defaultState);
     const state = { ...defaultState, ...saved };
-    if (saved.dailyResetVersion !== DAILY_STATE_VERSION) {
-      return { ...state, goalCompleted: 0, dailyGoal: DAILY_QUIZ_SIZE, streak: 0, dailyChallenge: null, dailyResetVersion: DAILY_STATE_VERSION, lastDailyCompletionDate: null };
-    }
-    return state;
+    return {
+      ...state,
+      goalCompleted: Math.min(DAILY_QUIZ_SIZE, Math.max(0, Number(state.goalCompleted) || 0)),
+      dailyGoal: DAILY_QUIZ_SIZE,
+      streak: Math.max(0, Number(state.streak) || 0),
+      dailyResetVersion: DAILY_STATE_VERSION
+    };
   } catch { return structuredClone(defaultState); }
 }
 
@@ -55,7 +58,7 @@ export function createStore() {
       const current = state.dailyChallenge;
       const expectedSize = Math.min(DAILY_QUIZ_SIZE, words.length);
       const availableIds = new Set(words.map(word => word.id));
-      const isValid = current && current.date === today && current.wordIds.length === expectedSize && current.wordIds.every(id => availableIds.has(id));
+      const isValid = current && current.date === today && Array.isArray(current.wordIds) && current.wordIds.length === expectedSize && current.wordIds.every(id => availableIds.has(id));
       if (isValid) return current;
       state = { ...state, goalCompleted: 0, dailyChallenge: { date: today, wordIds: shuffle(words).slice(0, DAILY_QUIZ_SIZE).map(word => word.id), answered: 0, completed: false } };
       if (notifyChanges) notify(); else persist();
