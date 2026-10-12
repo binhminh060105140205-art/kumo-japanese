@@ -46,8 +46,8 @@
 
 .practice-stage .flashcard-shell { min-height: 455px; }
 .practice-stage .flashcard { width: min(620px, calc(100% - 24px)); min-height: 415px; padding: 44px; border-top-width: 4px; border-color: rgba(139, 157, 220, .28); border-top-color: rgba(255, 154, 112, .92); background-color: #1b294d; background-image: linear-gradient(rgba(132, 157, 221, .09) 1px, transparent 1px), linear-gradient(90deg, rgba(132, 157, 221, .09) 1px, transparent 1px), radial-gradient(circle at 50% 30%, rgba(126, 151, 226, .13), transparent 58%); background-size: 22px 22px, 22px 22px, auto; box-shadow: 0 18px 45px rgba(5, 10, 27, .25), inset 0 1px 0 rgba(255, 255, 255, .04); }
-.practice-stage .flashcard h3 { font-size: clamp(52px, 8vw, 82px); font-weight: 500; letter-spacing: -.045em; }
-.practice-stage .flashcard .kana { margin-top: 15px; color: #aebcf0; font-size: 18px; font-weight: 400; }
+.practice-stage .flashcard .flashcard-word { width: 100%; max-width: 100%; font-family: "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif; font-size: var(--flashcard-word-size, clamp(64px, 9vw, 112px)); font-weight: 500; letter-spacing: -.025em; line-height: 1.08; white-space: nowrap; }
+.practice-stage .flashcard .kana { margin-top: 20px; color: #aebcf0; font-family: "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif; font-size: clamp(24px, 3.6vw, 32px); font-weight: 400; line-height: 1.15; }
 .practice-stage .flashcard .meaning { font-weight: 500; }
 .practice-stage .flashcard .romaji { font-weight: 400; opacity: .86; }
 .practice-stage .flashcard .lesson-tag { color: #bac5e4; background: rgba(8, 15, 34, .55); letter-spacing: .08em; }
