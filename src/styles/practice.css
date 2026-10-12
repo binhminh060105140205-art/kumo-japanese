@@ -32,8 +32,8 @@
 .review-button:disabled { cursor: default; }
 .review-button.review-choice { box-shadow: 0 0 0 4px rgba(170, 181, 255, .18); }
 .review-button.review-muted { opacity: .35; filter: saturate(.45); }
-.flashcard-shell.slide-left { animation: flashcard-slide-left .1s cubic-bezier(.22, .61, .36, 1) forwards; }
-.flashcard-shell.slide-right { animation: flashcard-slide-right .1s cubic-bezier(.22, .61, .36, 1) forwards; }
+.flashcard-shell.slide-left { animation: flashcard-slide-left .15s cubic-bezier(.22, .61, .36, 1) forwards; }
+.flashcard-shell.slide-right { animation: flashcard-slide-right .15s cubic-bezier(.22, .61, .36, 1) forwards; }
 @keyframes flashcard-slide-left { 0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); } 35% { opacity: 1; transform: translate3d(-28px, -7px, 0) rotate(-4deg); } 100% { opacity: 0; transform: translate3d(-120%, -16px, 0) rotate(-14deg); } }
 @keyframes flashcard-slide-right { 0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); } 35% { opacity: 1; transform: translate3d(28px, -7px, 0) rotate(4deg); } 100% { opacity: 0; transform: translate3d(120%, -16px, 0) rotate(14deg); } }
 @media (prefers-reduced-motion: reduce) { .flashcard-shell.slide-left, .flashcard-shell.slide-right { animation-duration: .01ms; } }

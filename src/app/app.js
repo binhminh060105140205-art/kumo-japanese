@@ -85,7 +85,7 @@ export function createApp(root) {
     });
     setTimeout(() => {
       practice.reviewFlashcard(result, wordId);
-    }, 100);
+    }, 150);
   }
 
   function handleClick(event) {
