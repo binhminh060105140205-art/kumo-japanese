@@ -98,6 +98,13 @@ export function createApp(root) {
     const mode = event.target.closest("[data-mode]");
     if (mode) { startPractice(mode.dataset.mode); return; }
 
+    const direction = event.target.closest("[data-practice-direction]");
+    if (direction) {
+      practice.setDirection(direction.dataset.practiceDirection, direction.dataset.direction);
+      render();
+      return;
+    }
+
     const practiceFilter = event.target.closest("[data-practice-filter]");
     if (practiceFilter) {
       if (practiceFilter.dataset.practiceFilter === "category") {

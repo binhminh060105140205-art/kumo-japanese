@@ -10,6 +10,8 @@ export class PracticeSession {
   constructor(store) {
     this.store = store;
     this.mode = "flashcards";
+    this.flashcardDirection = "jp-to-vi";
+    this.quizDirection = "jp-to-vi";
     this.index = 0;
     this.quiz = null;
     this.match = null;
@@ -36,6 +38,14 @@ export class PracticeSession {
     this.match = null;
     this.dailyWords = mode === "dailyQuiz" ? this.store.getDailyChallengeWords() : [];
     this.resetFlashcardSession();
+  }
+
+  setDirection(type, direction) {
+    if (type === "flashcard" && ["jp-to-vi", "vi-to-jp"].includes(direction)) this.flashcardDirection = direction;
+    if (type === "quiz" && ["jp-to-vi", "vi-to-jp", "audio-to-vi"].includes(direction)) {
+      this.quizDirection = direction;
+      this.quiz = null;
+    }
   }
 
   resetFlashcardSession() {
@@ -84,9 +94,9 @@ export class PracticeSession {
     const state = this.store.getState();
     if (this.mode === "flashcards" && this.flashcardCompleted) return renderPracticeComplete({ total: this.flashcardTotal });
     if (!this.getSessionWords().length) return renderPracticeEmpty();
-    if (this.mode === "flashcards") return renderFlashcard({ word: this.getCurrentWord(), index: this.flashcardTotal - this.flashcardQueue.length, total: this.flashcardTotal, showRomaji: state.showRomaji });
-    if (this.mode === "quiz") return renderQuiz({ ...this.getQuizData(), total: 10, daily: false });
-    if (this.mode === "dailyQuiz") return state.dailyChallenge?.completed ? renderDailyComplete({ streak: state.streak }) : renderQuiz({ ...this.getQuizData(), total: DAILY_QUIZ_SIZE, daily: true });
+    if (this.mode === "flashcards") return renderFlashcard({ word: this.getCurrentWord(), index: this.flashcardTotal - this.flashcardQueue.length, total: this.flashcardTotal, showRomaji: state.showRomaji, direction: this.flashcardDirection });
+    if (this.mode === "quiz") return renderQuiz({ ...this.getQuizData(), total: 10, daily: false, direction: this.quizDirection });
+    if (this.mode === "dailyQuiz") return state.dailyChallenge?.completed ? renderDailyComplete({ streak: state.streak }) : renderQuiz({ ...this.getQuizData(), total: DAILY_QUIZ_SIZE, daily: true, direction: this.quizDirection });
     if (this.mode === "typing") return renderTyping({ word: this.getCurrentWord(), index: this.index });
     return renderMatch({ state: this.getMatchState() });
   }
@@ -98,7 +108,7 @@ export class PracticeSession {
       const distractors = this.store.getWords().filter(word => word.id !== question.id).sort(() => Math.random() - 0.5).slice(0, 3);
       this.quiz = { question, options: [question, ...distractors].sort(() => Math.random() - 0.5), answered: false };
     }
-    return { ...this.quiz, index: this.index };
+    return { ...this.quiz, index: this.index, direction: this.quizDirection };
   }
 
   answerQuiz(id) {
