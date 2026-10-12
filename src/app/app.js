@@ -14,7 +14,7 @@ export function createApp(root) {
   const store = createStore();
   const router = createRouter(render);
   const practice = new PracticeSession(store);
-  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all" }, toastTimer: null };
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all", wordLimit: Number(store.getState().practiceWordLimit) || 0 }, toastTimer: null };
 
   function getScreen() {
     const view = router.getCurrentView();
@@ -109,6 +109,11 @@ export function createApp(root) {
     if (practiceFilter) {
       if (practiceFilter.dataset.practiceFilter === "category") {
         ui.practice.category = practiceFilter.dataset.value;
+      } else if (practiceFilter.dataset.practiceFilter === "wordLimit") {
+        ui.practice.wordLimit = Number(practiceFilter.dataset.value) || 0;
+        practice.setFilters(ui.practice);
+        store.updateSettings({ practiceWordLimit: ui.practice.wordLimit });
+        return;
       } else {
         const selectedLessons = new Set(Array.isArray(ui.practice.lesson) ? ui.practice.lesson : ui.practice.lesson === "Tất cả" ? [] : [ui.practice.lesson]);
         if (practiceFilter.dataset.value === "Tất cả") selectedLessons.clear();
@@ -181,6 +186,12 @@ export function createApp(root) {
 
   function handleKeydown(event) {
     if (router.getCurrentView() !== "practice") return;
+    const isEditable = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName) || event.target?.isContentEditable;
+    if (event.key.toLowerCase() === "m" && !isEditable) {
+      const word = practice.getCurrentWord();
+      if (word) speakJapanese(word.japanese, store.getState().soundEnabled);
+      return;
+    }
     if (practice.mode === "flashcards") {
       if (event.code === "Space") { event.preventDefault(); $("#flashcard")?.classList.toggle("flipped"); }
       if (event.key === "ArrowLeft") { event.preventDefault(); $("[data-review=\"again\"]")?.click(); }

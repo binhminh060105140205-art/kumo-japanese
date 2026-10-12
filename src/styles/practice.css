@@ -41,3 +41,5 @@
 .practice-stage > .practice-modes .practice-mode { gap: 8px; padding: 10px 8px; }
 .typing-input { font-size: 16px; }
 .practice-picker > .practice-modes { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 2px; padding: 16px 0 0; border-top: 1px solid var(--line); }.practice-picker > .practice-modes .practice-mode { padding: 12px 10px; }
+.practice-picker { padding: 14px; gap: 12px; margin-bottom: 14px; }.practice-picker-head h2 { font-size: 18px; }.practice-picker-search-row { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.7fr); align-items: end; gap: 14px; }.practice-search { max-width: none; }.practice-picker-filters { grid-template-columns: minmax(0, 1.7fr) minmax(220px, .8fr); gap: 14px; }.practice-picker > .practice-modes { margin-top: 0; }.practice-stage { width: 100%; }.practice-stage > .practice-card { min-height: 570px; }.practice-stage .flashcard-shell { min-height: 405px; }.practice-stage .flashcard { width: min(520px, 100%); min-height: 335px; }.practice-stage .match-tile { min-height: 104px; font-size: 14px; }
+.practice-picker { width: min(100%, 1120px); margin-inline: auto; }

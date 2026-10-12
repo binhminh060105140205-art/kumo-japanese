@@ -6,6 +6,15 @@ import { renderPracticeComplete, renderPracticeEmpty } from "../components/pract
 import { DAILY_QUIZ_SIZE } from "./store.js";
 import { normalize } from "../utils/dom.js";
 
+function shuffle(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
 export class PracticeSession {
   constructor(store) {
     this.store = store;
@@ -16,18 +25,21 @@ export class PracticeSession {
     this.quiz = null;
     this.match = null;
     this.dailyWords = [];
+    this.wordPool = [];
     this.flashcardQueue = [];
     this.flashcardTotal = 0;
     this.flashcardCompleted = false;
-    this.filters = { category: "all", lesson: "Tất cả", query: "" };
+    this.filters = { category: "all", lesson: "Tất cả", query: "", wordLimit: 0 };
+    this.refreshWordPool();
     this.resetFlashcardSession();
   }
 
   setFilters(filters) {
-    this.filters = { ...this.filters, ...filters };
+    this.filters = { ...this.filters, ...filters, wordLimit: Number(filters.wordLimit) || 0 };
     this.index = 0;
     this.quiz = null;
     this.match = null;
+    this.refreshWordPool();
     this.resetFlashcardSession();
   }
 
@@ -48,21 +60,24 @@ export class PracticeSession {
     }
   }
 
-  resetFlashcardSession() {
+  refreshWordPool() {
     const matchingWords = this.getFilteredWords();
+    const limit = Number(this.filters.wordLimit) || 0;
+    this.wordPool = limit > 0 ? shuffle(matchingWords).slice(0, limit) : [...matchingWords];
+  }
+
+  resetFlashcardSession() {
+    const selectedWords = this.wordPool.length ? this.wordPool : this.getFilteredWords();
     const state = this.store.getState();
-    const unmasteredWords = matchingWords.filter(word => !state.mastered.includes(word.id));
-    const sessionWords = unmasteredWords.length ? unmasteredWords : matchingWords;
-    this.flashcardQueue = [...sessionWords];
-    this.flashcardTotal = sessionWords.length;
-    this.flashcardCompleted = false;
+    const unmasteredWords = selectedWords.filter(word => !state.mastered.includes(word.id));
+    this.flashcardQueue = shuffle(unmasteredWords);
+    this.flashcardTotal = unmasteredWords.length;
+    this.flashcardCompleted = selectedWords.length > 0 && unmasteredWords.length === 0;
   }
 
   getWords() {
     const state = this.store.getState();
-    const matchingWords = this.getFilteredWords();
-    const availableWords = matchingWords.filter(word => !state.mastered.includes(word.id));
-    return availableWords.length ? availableWords : matchingWords;
+    return this.wordPool.filter(word => !state.mastered.includes(word.id));
   }
 
   getFilteredWords() {
@@ -127,7 +142,7 @@ export class PracticeSession {
     const word = this.getCurrentWord();
     if (!word || (expectedWordId !== undefined && word.id !== expectedWordId)) return null;
     this.flashcardQueue = this.flashcardQueue.slice(1);
-    if (result === "again") this.flashcardQueue.push(word);
+    if (result === "again") this.flashcardQueue = shuffle([...this.flashcardQueue, word]);
     this.flashcardCompleted = result === "know" && this.flashcardQueue.length === 0;
     this.store.markWord(word.id, result === "know" ? "mastered" : "reviewed");
     return { word, completed: this.flashcardCompleted };

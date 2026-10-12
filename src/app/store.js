@@ -3,7 +3,7 @@ import { initialVocabulary } from "../data/vocabulary.js";
 const STORAGE_KEY = "kumo-japanese-state-v2";
 export const DAILY_QUIZ_SIZE = 5;
 const DAILY_STATE_VERSION = 2;
-const defaultState = { mastered: [], reviewed: [], customWords: [], goalCompleted: 0, dailyGoal: DAILY_QUIZ_SIZE, streak: 0, sessionScore: 0, soundEnabled: true, showRomaji: true, theme: "dark", dailyChallenge: null, dailyResetVersion: DAILY_STATE_VERSION, lastDailyCompletionDate: null };
+const defaultState = { mastered: [], reviewed: [], customWords: [], goalCompleted: 0, dailyGoal: DAILY_QUIZ_SIZE, streak: 0, sessionScore: 0, soundEnabled: true, showRomaji: true, theme: "dark", practiceWordLimit: 0, dailyChallenge: null, dailyResetVersion: DAILY_STATE_VERSION, lastDailyCompletionDate: null };
 
 function getDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -37,6 +37,7 @@ function readState() {
       goalCompleted: Math.min(DAILY_QUIZ_SIZE, Math.max(0, Number(state.goalCompleted) || 0)),
       dailyGoal: DAILY_QUIZ_SIZE,
       streak: Math.max(0, Number(state.streak) || 0),
+      practiceWordLimit: Math.max(0, Number(state.practiceWordLimit) || 0),
       dailyResetVersion: DAILY_STATE_VERSION
     };
   } catch { return structuredClone(defaultState); }
