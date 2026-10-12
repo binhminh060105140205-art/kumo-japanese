@@ -3,5 +3,5 @@ export function renderPracticeEmpty() {
 }
 
 export function renderPracticeComplete({ total }) {
-  return `<article class="practice-card practice-empty practice-complete"><div class="win-icon">✓</div><h3>Hoàn thành phiên học</h3><p>Bạn đã nhớ hết ${total} thẻ trong phần đã chọn. Chọn bộ lọc khác để học tiếp.</p></article>`;
+  return `<article class="practice-card practice-empty practice-complete"><div class="win-icon">✓</div><h3>Hoàn thành phiên học</h3><p>${total ? `Bạn đã nhớ hết ${total} thẻ trong phần đã chọn.` : "Phần đã chọn đã học xong."} Chọn bộ lọc khác để học tiếp.</p></article>`;
 }

@@ -22,7 +22,7 @@ export function createApp(root) {
     const words = store.getWords();
     if (view === "dashboard") return renderDashboard({ state, words });
     if (view === "library") return renderLibrary({ words, state, query: ui.libraryQuery, filter: ui.libraryFilter, category: ui.libraryCategory });
-    if (view === "practice") return renderPractice({ mode: practice.mode, stage: practice.render(), filters: ui.practice, filteredCount: practice.getFilteredCount(), score: state.sessionScore });
+    if (view === "practice") return renderPractice({ mode: practice.mode, stage: practice.render(), filters: ui.practice, filteredCount: practice.getFilteredCount(), availableCount: practice.getAvailableFilteredCount(), score: state.sessionScore });
     if (view === "stats") return renderStats({ state, words });
     return renderSettings({ state });
   }
