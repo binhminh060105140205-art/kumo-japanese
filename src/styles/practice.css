@@ -40,3 +40,4 @@
 .practice-stage > .practice-modes { margin-bottom: 14px; padding: 8px; }
 .practice-stage > .practice-modes .practice-mode { gap: 8px; padding: 10px 8px; }
 .typing-input { font-size: 16px; }
+.practice-picker > .practice-modes { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 2px; padding: 16px 0 0; border-top: 1px solid var(--line); }.practice-picker > .practice-modes .practice-mode { padding: 12px 10px; }
