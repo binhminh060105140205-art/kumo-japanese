@@ -1,0 +1,27 @@
+/* Japanese study text uses a softer textbook-style face than the UI headings. */
+.practice-stage .flashcard .flashcard-word,
+.practice-stage .flashcard .kana,
+.match-tile .match-jp,
+.match-tile small,
+.word-preview-jp,
+.word-preview-kana,
+.jp-cell strong,
+.jp-cell small,
+.prompt-japanese,
+.prompt-kana,
+.option-japanese {
+  font-family: var(--font-japanese);
+}
+
+.practice-stage .flashcard .flashcard-word {
+  font-weight: 400;
+  letter-spacing: .015em;
+}
+
+.match-tile .match-jp,
+.word-preview-jp,
+.jp-cell strong,
+.prompt-japanese,
+.option-japanese {
+  font-weight: 400;
+}
