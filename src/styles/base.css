@@ -14,3 +14,4 @@ h2 { margin-bottom: 0; font-size: 21px; line-height: 1.1; letter-spacing: -.025e
 .muted { color: var(--muted); }
 .lead { margin-bottom: 0; font-size: 15px; }
 .eyebrow { margin: 0 0 8px; color: var(--orange); font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.eyebrow, .lead, .mode-content small, .mode-content em, .stat-card small, .practice-picker-head .muted, .practice-picker-note, .practice-instructions, .card-hint, .match-instructions, .question-top .muted, .prompt-label, .quiz-footer, .typing-center .question-type, .match-win p, .practice-empty p, .settings-card p.muted, .big-stat em, .chart-total, .mastery-circle span, .topbar-brand span, .app-footer { display: none; }
