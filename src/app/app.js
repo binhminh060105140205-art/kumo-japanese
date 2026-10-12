@@ -90,7 +90,11 @@ export function createApp(root) {
 
   function handleClick(event) {
     const nav = event.target.closest("[data-view]");
-    if (nav) { router.navigate(nav.dataset.view); return; }
+    if (nav) {
+      if (nav.dataset.view === "practice") practice.setFilters(ui.practice);
+      router.navigate(nav.dataset.view);
+      return;
+    }
 
     const start = event.target.closest("[data-start]");
     if (start) { startPractice(start.dataset.start); return; }

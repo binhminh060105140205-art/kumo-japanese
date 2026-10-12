@@ -29,7 +29,7 @@ export class PracticeSession {
     this.flashcardQueue = [];
     this.flashcardTotal = 0;
     this.flashcardCompleted = false;
-    this.filters = { category: "all", lesson: "Tất cả", query: "", wordLimit: 0 };
+    this.filters = { category: "all", lesson: "Tất cả", query: "", wordLimit: Number(store.getState().practiceWordLimit) || 0 };
     this.refreshWordPool();
     this.resetFlashcardSession();
   }
