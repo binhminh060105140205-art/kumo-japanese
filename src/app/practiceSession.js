@@ -68,11 +68,9 @@ export class PracticeSession {
 
   resetFlashcardSession() {
     const selectedWords = this.wordPool.length ? this.wordPool : this.getFilteredWords();
-    const state = this.store.getState();
-    const unmasteredWords = selectedWords.filter(word => !state.mastered.includes(word.id));
-    this.flashcardQueue = shuffle(unmasteredWords);
-    this.flashcardTotal = unmasteredWords.length;
-    this.flashcardCompleted = selectedWords.length > 0 && unmasteredWords.length === 0;
+    this.flashcardQueue = shuffle(selectedWords);
+    this.flashcardTotal = selectedWords.length;
+    this.flashcardCompleted = selectedWords.length === 0;
   }
 
   getWords() {
