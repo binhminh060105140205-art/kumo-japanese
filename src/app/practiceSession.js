@@ -5,6 +5,7 @@ import { renderMatch } from "../components/practice/MatchMode.js";
 import { renderSummary } from "../components/practice/SummaryMode.js";
 import { renderPracticeComplete, renderPracticeEmpty } from "../components/practice/EmptyMode.js";
 import { DAILY_QUIZ_SIZE } from "./store.js";
+import { FlashcardQueue } from "./flashcardQueue.js";
 import { normalize } from "../utils/dom.js";
 
 function shuffle(items) {
@@ -27,7 +28,7 @@ export class PracticeSession {
     this.match = null;
     this.dailyWords = [];
     this.wordPool = [];
-    this.flashcardQueue = [];
+    this.flashcardQueue = new FlashcardQueue([]);
     this.flashcardTotal = 0;
     this.flashcardCompleted = false;
     this.filters = { category: "all", lesson: "Tất cả", query: "", wordLimit: Number(store.getState().practiceWordLimit) || 0 };
@@ -69,9 +70,9 @@ export class PracticeSession {
 
   resetFlashcardSession() {
     const selectedWords = this.wordPool;
-    this.flashcardQueue = shuffle(selectedWords);
+    this.flashcardQueue = new FlashcardQueue(selectedWords);
     this.flashcardTotal = selectedWords.length;
-    this.flashcardCompleted = selectedWords.length === 0;
+    this.flashcardCompleted = this.flashcardQueue.completed;
   }
 
   getWords() {
@@ -93,13 +94,13 @@ export class PracticeSession {
   }
 
   getCurrentWord() {
-    if (this.mode === "flashcards") return this.flashcardQueue[0];
+    if (this.mode === "flashcards") return this.flashcardQueue.current();
     const words = this.mode === "dailyQuiz" ? this.dailyWords : this.getWords();
     return words[this.index % words.length];
   }
 
   getSessionWords() {
-    return this.mode === "dailyQuiz" ? this.dailyWords : this.mode === "flashcards" ? this.flashcardQueue : this.getWords();
+    return this.mode === "dailyQuiz" ? this.dailyWords : this.mode === "flashcards" ? this.flashcardQueue.items : this.getWords();
   }
 
   next() {
@@ -111,7 +112,7 @@ export class PracticeSession {
     const state = this.store.getState();
     if (this.mode === "flashcards" && this.flashcardCompleted) return renderPracticeComplete({ total: this.flashcardTotal });
     if (!this.getSessionWords().length) return renderPracticeEmpty();
-    if (this.mode === "flashcards") return renderFlashcard({ word: this.getCurrentWord(), index: this.flashcardTotal - this.flashcardQueue.length, total: this.flashcardTotal, showRomaji: state.showRomaji, direction: this.flashcardDirection });
+    if (this.mode === "flashcards") return renderFlashcard({ word: this.getCurrentWord(), index: this.flashcardQueue.roundIndex, total: this.flashcardQueue.roundTotal, showRomaji: state.showRomaji, direction: this.flashcardDirection });
     if (this.mode === "quiz") return renderQuiz({ ...this.getQuizData(), total: 10, daily: false, direction: this.quizDirection });
     if (this.mode === "dailyQuiz") return state.dailyChallenge?.completed ? renderDailyComplete({ streak: state.streak }) : renderQuiz({ ...this.getQuizData(), total: DAILY_QUIZ_SIZE, daily: true, direction: this.quizDirection });
     if (this.mode === "typing") return renderTyping({ word: this.getCurrentWord(), index: this.index });
@@ -144,9 +145,9 @@ export class PracticeSession {
     if (this.mode !== "flashcards" || this.flashcardCompleted) return null;
     const word = this.getCurrentWord();
     if (!word || (expectedWordId !== undefined && word.id !== expectedWordId)) return null;
-    this.flashcardQueue = this.flashcardQueue.slice(1);
-    if (result === "again") this.flashcardQueue = shuffle([...this.flashcardQueue, word]);
-    this.flashcardCompleted = result === "know" && this.flashcardQueue.length === 0;
+    const review = this.flashcardQueue.review(result, expectedWordId);
+    if (!review) return null;
+    this.flashcardCompleted = review.completed;
     this.store.markWord(word.id, result === "know" ? "mastered" : "reviewed");
     return { word, completed: this.flashcardCompleted };
   }

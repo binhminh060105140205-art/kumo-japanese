@@ -24,7 +24,7 @@ Mở địa chỉ Vite hiện trong terminal, thường là `http://localhost:51
 
 - Dashboard với streak, tiến độ khóa học, mục tiêu hàng ngày và từ cần ôn.
 - Bài kiểm tra hàng ngày gồm 5 từ chọn ngẫu nhiên từ toàn bộ kho, có cả chữ Hán; hoàn thành đủ 5 câu sẽ cộng 1 ngày vào chuỗi.
-- Thẻ ghi nhớ: lật thẻ, nghe phát âm, dùng `Space` để lật, `←` để chọn chưa nhớ và `→` để chọn đã nhớ; thẻ chưa nhớ được đưa lại cuối hàng đợi, thẻ đã nhớ được loại khỏi phiên đến khi hoàn thành.
+- Thẻ ghi nhớ: lật thẻ, nghe phát âm, dùng `Space` để lật, `←` để chọn chưa nhớ và `→` để chọn đã nhớ; hệ thống luôn hiển thị hết các từ chưa xuất hiện trong vòng hiện tại trước, rồi mới ôn lại các từ chưa nhớ.
 - Trắc nghiệm 4 đáp án, hỗ trợ phím `1–4`.
 - Gõ cách đọc bằng romaji, hiragana hoặc kanji.
 - Ghép cặp từ tiếng Nhật với nghĩa tiếng Việt.
