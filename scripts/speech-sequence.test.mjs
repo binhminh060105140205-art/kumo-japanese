@@ -63,3 +63,44 @@ test("speakSequence speaks Japanese then Vietnamese for every word", () => {
   delete globalThis.window;
   delete globalThis.SpeechSynthesisUtterance;
 });
+
+test("speakSequence prefers female voices for Japanese and Vietnamese", () => {
+  const spoken = [];
+  globalThis.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text;
+      this.lang = "";
+      this.rate = 0;
+      this.pitch = 0;
+      this.voice = null;
+    }
+  };
+  globalThis.window = {
+    speechSynthesis: {
+      cancel() {},
+      getVoices() {
+        return [
+          { lang: "ja-JP", name: "Microsoft Ichiro Online" },
+          { lang: "ja-JP", name: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+          { lang: "vi-VN", name: "Microsoft An Online" },
+          { lang: "vi-VN", name: "Google Tiếng Việt" }
+        ];
+      },
+      speak(utterance) {
+        spoken.push({ lang: utterance.lang, voice: utterance.voice?.name, pitch: utterance.pitch });
+        utterance.onend();
+      }
+    }
+  };
+
+  speakSequence([
+    { id: 1, japanese: "食べます", meaning: "Ăn" }
+  ]);
+
+  assert.deepEqual(spoken, [
+    { lang: "ja-JP", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)", pitch: 1.12 },
+    { lang: "vi-VN", voice: "Google Tiếng Việt", pitch: 1.12 }
+  ]);
+  delete globalThis.window;
+  delete globalThis.SpeechSynthesisUtterance;
+});

@@ -175,7 +175,7 @@ export function createApp(root) {
     if (category) { ui.libraryCategory = category.dataset.category; render(); return; }
 
     const speaker = event.target.closest("[data-speak]");
-    if (speaker) { speakJapanese(speaker.dataset.speak, store.getState().soundEnabled); return; }
+    if (speaker) { if (practice.mode === "summary") stopSummaryPlayback("Đang nghe từ riêng lẻ"); speakJapanese(speaker.dataset.speak, store.getState().soundEnabled); return; }
 
     if (event.target.id === "word-modal") { $("#word-modal")?.classList.remove("visible"); return; }
 

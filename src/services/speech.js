@@ -1,3 +1,5 @@
+const femaleVoiceHints = /female|woman|girl|kyoko|haruka|nanami|sayaka|aoi|yuna|hoai ?my|hoài ?my|linh|mai|google.*(日本語|japanese|tiếng việt|vietnamese)|microsoft.*(nanami|hoai ?my|an)/i;
+
 export function buildSpeechSequence(words) {
   return words.flatMap(word => [
     word.japanese ? { wordId: word.id, lang: "ja-JP", text: word.japanese } : null,
@@ -5,10 +7,29 @@ export function buildSpeechSequence(words) {
   ]).filter(Boolean);
 }
 
+function scoreVoice(voice) {
+  const name = voice.name || "";
+  let score = 0;
+  if (femaleVoiceHints.test(name)) score += 20;
+  if (/nanami|kyoko|haruka|hoai ?my|google.*(日本語|tiếng việt|vietnamese)/i.test(name)) score += 15;
+  if (/male|man|ichiro|otoya|nam ?minh/i.test(name)) score -= 30;
+  return score;
+}
+
+function getPreferredVoice(lang) {
+  if (!("speechSynthesis" in window) || typeof window.speechSynthesis.getVoices !== "function") return null;
+  const languagePrefix = lang.slice(0, 2).toLowerCase();
+  const voices = window.speechSynthesis.getVoices().filter(voice => voice.lang?.toLowerCase().startsWith(languagePrefix));
+  return [...voices].sort((first, second) => scoreVoice(second) - scoreVoice(first))[0] || null;
+}
+
 function createUtterance(text, lang) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
   utterance.rate = lang === "ja-JP" ? 0.84 : 0.9;
+  utterance.pitch = 1.12;
+  const voice = getPreferredVoice(lang);
+  if (voice) utterance.voice = voice;
   return utterance;
 }
 
