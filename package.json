@@ -8,7 +8,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "audit:data": "node scripts/audit-jpd-vocabulary.mjs",
-    "test:speech": "node --test scripts/speech-sequence.test.mjs",
     "test:practice": "node --test scripts/practice-session.test.mjs"
   },
   "devDependencies": {
