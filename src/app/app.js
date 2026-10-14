@@ -8,13 +8,45 @@ import { createRouter } from "./router.js";
 import { createStore } from "./store.js";
 import { PracticeSession } from "./practiceSession.js";
 import { $, $$, normalize } from "../utils/dom.js";
-import { speakJapanese } from "../services/speech.js";
+import { speakJapanese, speakSequence } from "../services/speech.js";
 
 export function createApp(root) {
   const store = createStore();
   const router = createRouter(render);
   const practice = new PracticeSession(store);
-  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all", wordLimit: Number(store.getState().practiceWordLimit) || 0 }, toastTimer: null };
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all", wordLimit: Number(store.getState().practiceWordLimit) || 0 }, toastTimer: null, summaryPlaying: false };
+  let stopSummarySpeech = () => {};
+
+  function updateSummaryStatus(message) {
+    const status = $("[data-summary-status]");
+    if (status) status.textContent = message;
+  }
+
+  function stopSummaryPlayback(message = "Bấm Nghe hết để đọc theo thứ tự") {
+    stopSummarySpeech();
+    stopSummarySpeech = () => {};
+    ui.summaryPlaying = false;
+    if (practice.mode === "summary" && message) updateSummaryStatus(message);
+  }
+
+  function playSummarySpeech() {
+    stopSummaryPlayback(null);
+    if (practice.mode !== "summary") return;
+    const state = store.getState();
+    const words = practice.getWords();
+    if (!words.length) return;
+    if (!state.soundEnabled) {
+      updateSummaryStatus("Âm thanh đang tắt trong Cài đặt");
+      return;
+    }
+    ui.summaryPlaying = true;
+    updateSummaryStatus("Đang đọc lần lượt từ Nhật rồi đến nghĩa...");
+    stopSummarySpeech = speakSequence(words, true, () => {
+      stopSummarySpeech = () => {};
+      ui.summaryPlaying = false;
+      updateSummaryStatus("Đã đọc hết danh sách");
+    });
+  }
 
   function getScreen() {
     const view = router.getCurrentView();
@@ -22,7 +54,7 @@ export function createApp(root) {
     const words = store.getWords();
     if (view === "dashboard") return renderDashboard({ state, words });
     if (view === "library") return renderLibrary({ words, state, query: ui.libraryQuery, filter: ui.libraryFilter, category: ui.libraryCategory });
-    if (view === "practice") return renderPractice({ mode: practice.mode, stage: practice.render(), filters: ui.practice, filteredCount: practice.getFilteredCount(), availableCount: practice.getAvailableFilteredCount(), score: state.sessionScore });
+    if (view === "practice") return renderPractice({ mode: practice.mode, stage: practice.render({ summaryPlaying: ui.summaryPlaying }), filters: ui.practice, filteredCount: practice.getFilteredCount(), availableCount: practice.getAvailableFilteredCount(), score: state.sessionScore });
     if (view === "stats") return renderStats({ state, words });
     return renderSettings({ state });
   }
@@ -46,10 +78,12 @@ export function createApp(root) {
   }
 
   function startPractice(mode) {
+    stopSummaryPlayback(null);
     if (mode === "dailyQuiz") store.prepareDailyChallenge({ notifyChanges: false });
     practice.setFilters(ui.practice);
     practice.setMode(mode);
     router.navigate("practice");
+    if (mode === "summary") playSummarySpeech();
   }
 
   function handleQuizAnswer(button) {
@@ -92,6 +126,7 @@ export function createApp(root) {
     const nav = event.target.closest("[data-view]");
     if (nav) {
       if (nav.dataset.view === "practice") practice.setFilters(ui.practice);
+      stopSummaryPlayback(null);
       router.navigate(nav.dataset.view);
       return;
     }
@@ -111,12 +146,14 @@ export function createApp(root) {
 
     const practiceFilter = event.target.closest("[data-practice-filter]");
     if (practiceFilter) {
+      stopSummaryPlayback(null);
       if (practiceFilter.dataset.practiceFilter === "category") {
         ui.practice.category = practiceFilter.dataset.value;
       } else if (practiceFilter.dataset.practiceFilter === "wordLimit") {
         ui.practice.wordLimit = Number(practiceFilter.dataset.value) || 0;
         practice.setFilters(ui.practice);
         store.updateSettings({ practiceWordLimit: ui.practice.wordLimit });
+        if (practice.mode === "summary") playSummarySpeech();
         return;
       } else {
         const selectedLessons = new Set(Array.isArray(ui.practice.lesson) ? ui.practice.lesson : ui.practice.lesson === "Tất cả" ? [] : [ui.practice.lesson]);
@@ -127,6 +164,7 @@ export function createApp(root) {
       }
       practice.setFilters(ui.practice);
       render();
+      if (practice.mode === "summary") playSummarySpeech();
       return;
     }
 
@@ -151,6 +189,8 @@ export function createApp(root) {
       if (name === "check-typing") { handleTypingCheck(); return; }
       if (name === "skip-typing") { practice.next(); render(); return; }
       if (name === "restart-match") { practice.match = null; render(); return; }
+      if (name === "play-summary") { playSummarySpeech(); return; }
+      if (name === "stop-summary") { stopSummaryPlayback(); return; }
       if (name === "reset-progress") { if (window.confirm("Bạn có chắc muốn đặt lại tiến độ?")) { store.reset(); toast("Đã đặt lại tiến độ"); } return; }
     }
 
@@ -168,7 +208,7 @@ export function createApp(root) {
 
   function handleInput(event) {
     if (event.target.id === "word-search") { ui.libraryQuery = event.target.value; const caret = event.target.selectionStart; render(); const search = $("#word-search"); search?.focus(); search?.setSelectionRange(caret, caret); }
-    if (event.target.id === "practice-search") { ui.practice.query = event.target.value; const caret = event.target.selectionStart; practice.setFilters(ui.practice); render(); const search = $("#practice-search"); search?.focus(); search?.setSelectionRange(caret, caret); }
+    if (event.target.id === "practice-search") { ui.practice.query = event.target.value; const caret = event.target.selectionStart; practice.setFilters(ui.practice); stopSummaryPlayback(null); render(); const search = $("#practice-search"); search?.focus(); search?.setSelectionRange(caret, caret); if (practice.mode === "summary") playSummarySpeech(); }
   }
 
   function handleChange(event) {

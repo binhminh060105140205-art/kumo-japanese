@@ -2,6 +2,7 @@ import { renderFlashcard } from "../components/practice/FlashcardMode.js";
 import { renderDailyComplete, renderQuiz } from "../components/practice/QuizMode.js";
 import { renderTyping } from "../components/practice/TypingMode.js";
 import { renderMatch } from "../components/practice/MatchMode.js";
+import { renderSummary } from "../components/practice/SummaryMode.js";
 import { renderPracticeComplete, renderPracticeEmpty } from "../components/practice/EmptyMode.js";
 import { DAILY_QUIZ_SIZE } from "./store.js";
 import { normalize } from "../utils/dom.js";
@@ -106,7 +107,7 @@ export class PracticeSession {
     this.quiz = null;
   }
 
-  render() {
+  render(options = {}) {
     const state = this.store.getState();
     if (this.mode === "flashcards" && this.flashcardCompleted) return renderPracticeComplete({ total: this.flashcardTotal });
     if (!this.getSessionWords().length) return renderPracticeEmpty();
@@ -114,6 +115,7 @@ export class PracticeSession {
     if (this.mode === "quiz") return renderQuiz({ ...this.getQuizData(), total: 10, daily: false, direction: this.quizDirection });
     if (this.mode === "dailyQuiz") return state.dailyChallenge?.completed ? renderDailyComplete({ streak: state.streak }) : renderQuiz({ ...this.getQuizData(), total: DAILY_QUIZ_SIZE, daily: true, direction: this.quizDirection });
     if (this.mode === "typing") return renderTyping({ word: this.getCurrentWord(), index: this.index });
+    if (this.mode === "summary") return renderSummary({ words: this.getWords(), isPlaying: Boolean(options.summaryPlaying) });
     return renderMatch({ state: this.getMatchState() });
   }
 

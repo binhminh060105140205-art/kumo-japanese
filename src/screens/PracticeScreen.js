@@ -8,7 +8,8 @@ function renderModeSelector(mode) {
     ["flashcards", "▣", "Thẻ ghi nhớ", "orange-text"],
     ["quiz", "✦", "Trắc nghiệm", "purple-text"],
     ["typing", "⌨", "Gõ cách đọc", "blue-text"],
-    ["match", "⌘", "Ghép cặp", "green-text"]
+    ["match", "⌘", "Ghép cặp", "green-text"],
+    ["summary", "☷", "Tổng hợp", "yellow-text"]
   ];
   return modes.map(([id, icon, title, color]) => `<button class="practice-mode ${mode === id ? "active" : ""}" data-mode="${id}"><span class="mode-symbol ${color}">${icon}</span><span><strong>${title}</strong></span><span>→</span></button>`).join("");
 }

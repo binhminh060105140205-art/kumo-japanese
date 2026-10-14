@@ -55,3 +55,22 @@
 .flashcard-sound:hover { color: var(--text); border-color: rgba(170, 181, 255, .58); background: rgba(170, 181, 255, .12); transform: translateY(-1px); }
 .speaker-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.55; }
 .flashcard-meaning { font-weight: 500; }
+
+.yellow-text { color: var(--yellow); }
+.summary-stage { min-height: 505px; }
+.summary-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 0; margin: 18px 0 14px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.summary-toolbar h3 { margin: 0 0 5px; font: 600 20px "Space Grotesk", sans-serif; }
+.summary-toolbar p { margin: 0; color: var(--muted); font-size: 11px; }
+.summary-actions { display: flex; align-items: center; gap: 8px; }
+.summary-actions .primary-button, .summary-actions .small-button { white-space: nowrap; }
+.summary-list { display: grid; gap: 7px; max-height: 540px; padding-right: 5px; overflow-y: auto; }
+.summary-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 66px; padding: 10px 13px; border: 1px solid rgba(139, 157, 220, .14); border-radius: 12px; background: rgba(10, 18, 39, .28); transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.summary-row:hover { border-color: rgba(243, 206, 85, .5); background: rgba(243, 206, 85, .06); transform: translateX(2px); }
+.summary-index { color: var(--muted-2); font-size: 11px; text-align: center; }
+.summary-japanese strong, .summary-japanese span, .summary-meaning strong, .summary-meaning span { display: block; }
+.summary-japanese strong { font-family: var(--font-japanese); font-size: 23px; font-weight: 400; }
+.summary-japanese span { margin-top: 3px; color: var(--lavender); font-size: 11px; }
+.summary-meaning strong { color: var(--text); font-size: 13px; font-weight: 600; }
+.summary-meaning span { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.summary-row .lesson-tag { margin-top: 0; white-space: nowrap; }
+@media (max-width: 620px) { .summary-toolbar { align-items: flex-start; flex-direction: column; }.summary-actions { width: 100%; }.summary-actions .primary-button, .summary-actions .small-button { flex: 1; }.summary-row { grid-template-columns: 24px minmax(0, 1fr); }.summary-row .summary-meaning { grid-column: 2; }.summary-row .lesson-tag { grid-column: 2; justify-self: start; } }

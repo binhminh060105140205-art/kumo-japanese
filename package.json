@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "audit:data": "node scripts/audit-jpd-vocabulary.mjs"
+    "audit:data": "node scripts/audit-jpd-vocabulary.mjs",
+    "test:speech": "node --test scripts/speech-sequence.test.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.7"
