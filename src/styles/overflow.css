@@ -39,9 +39,6 @@
   word-break: break-word;
 }
 
-.flashcard {
-  overflow: hidden;
-}
 
 .practice-stage .flashcard .flashcard-word {
   white-space: normal;
