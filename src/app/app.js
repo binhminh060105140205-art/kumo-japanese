@@ -233,7 +233,7 @@ export function createApp(root) {
     const isEditable = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName) || event.target?.isContentEditable;
     if (event.key.toLowerCase() === "m" && !isEditable) {
       const word = practice.getCurrentWord();
-      if (word) speakJapanese(word.japanese, store.getState().soundEnabled);
+      if (word) speakJapanese(word.kana || word.japanese, store.getState().soundEnabled);
       return;
     }
     if (practice.mode === "flashcards") {

@@ -1,46 +1,99 @@
-const femaleVoiceHints = /female|woman|girl|kyoko|haruka|nanami|sayaka|aoi|yuna|hoai ?my|hoài ?my|linh|mai|google.*(日本語|japanese|tiếng việt|vietnamese)|microsoft.*(nanami|hoai ?my|an)/i;
+const femaleVoiceHintsByLanguage = {
+  ja: /female|woman|girl|kyoko|haruka|nanami|sayaka|aoi|yuna|google.*(日本語|japanese)|microsoft.*(nanami|haruka|kyoko|sayaka|aoi|yuna)/i,
+  vi: /female|woman|girl|hoai ?my|hoài ?my|linh|mai|google.*(tiếng việt|vietnamese)|microsoft.*(hoai ?my|linh|mai)/i
+};
+const maleVoiceHints = /\bmale\b|\bman\b|\bichiro\b|\botoya\b|\bnam[\s_-]*minh\b/i;
 
 export function buildSpeechSequence(words) {
-  return words.flatMap(word => [
-    word.japanese ? { wordId: word.id, lang: "ja-JP", text: word.japanese } : null,
-    word.meaning ? { wordId: word.id, lang: "vi-VN", text: word.meaning } : null
-  ]).filter(Boolean);
+  return words.flatMap(word => {
+    const japaneseText = normalizeJapaneseSpeech(word.kana || word.japanese);
+    return [
+      japaneseText ? { wordId: word.id, lang: "ja-JP", text: japaneseText } : null,
+      word.meaning ? { wordId: word.id, lang: "vi-VN", text: word.meaning } : null
+    ];
+  }).filter(Boolean);
 }
 
-function scoreVoice(voice) {
-  const name = voice.name || "";
+function normalizeJapaneseSpeech(text) {
+  const source = String(text || "").trim();
+  if (!source) return "";
+  const candidates = source.split(/[\/／・]/).map(candidate => candidate.trim()).filter(Boolean);
+  const reading = candidates.find(candidate => /[\u3040-\u309f]/.test(candidate)) || candidates[0] || source;
+  return reading
+    .replace(/[（）()]/g, "")
+    .replace(/[～〜~]/g, "")
+    .replace(/[、,]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getSpeechSynthesis() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  return window.speechSynthesis;
+}
+
+function matchesLanguage(voice, lang) {
+  const voiceLang = String(voice.lang || "").toLowerCase();
+  const normalizedLang = lang.toLowerCase();
+  const prefix = normalizedLang.slice(0, 2);
+  return voiceLang === normalizedLang || voiceLang === prefix || voiceLang.startsWith(prefix + "-") || voiceLang.startsWith(prefix + "_");
+}
+
+function isFemaleVoice(voice, lang) {
+  const languagePrefix = lang.slice(0, 2).toLowerCase();
+  const femaleHints = femaleVoiceHintsByLanguage[languagePrefix];
+  return Boolean(femaleHints?.test(voice.name || "")) && !maleVoiceHints.test(voice.name || "");
+}
+
+function scoreVoice(voice, lang) {
   let score = 0;
-  if (femaleVoiceHints.test(name)) score += 20;
-  if (/nanami|kyoko|haruka|hoai ?my|google.*(日本語|tiếng việt|vietnamese)/i.test(name)) score += 15;
-  if (/male|man|ichiro|otoya|nam ?minh/i.test(name)) score -= 30;
+  if (voice.lang?.toLowerCase() === lang.toLowerCase()) score += 20;
+  if (isFemaleVoice(voice, lang)) score += 100;
+  if (maleVoiceHints.test(voice.name || "")) score -= 100;
   return score;
 }
 
 function getPreferredVoice(lang) {
-  if (!("speechSynthesis" in window) || typeof window.speechSynthesis.getVoices !== "function") return null;
-  const languagePrefix = lang.slice(0, 2).toLowerCase();
-  const voices = window.speechSynthesis.getVoices().filter(voice => voice.lang?.toLowerCase().startsWith(languagePrefix));
-  return [...voices].sort((first, second) => scoreVoice(second) - scoreVoice(first))[0] || null;
+  const speechSynthesis = getSpeechSynthesis();
+  if (!speechSynthesis || typeof speechSynthesis.getVoices !== "function") return null;
+  const voices = speechSynthesis.getVoices().filter(voice => matchesLanguage(voice, lang));
+  return [...voices]
+    .filter(voice => isFemaleVoice(voice, lang))
+    .sort((first, second) => scoreVoice(second, lang) - scoreVoice(first, lang))[0] || null;
 }
 
-function createUtterance(text, lang) {
-  const utterance = new SpeechSynthesisUtterance(text);
+function createUtterance(text, lang, usePreferredVoice = true) {
+  const speechText = lang === "ja-JP" ? normalizeJapaneseSpeech(text) : String(text || "").trim();
+  const utterance = new SpeechSynthesisUtterance(speechText);
   utterance.lang = lang;
   utterance.rate = lang === "ja-JP" ? 0.84 : 0.9;
   utterance.pitch = 1.12;
-  const voice = getPreferredVoice(lang);
+  const voice = usePreferredVoice ? getPreferredVoice(lang) : null;
   if (voice) utterance.voice = voice;
   return utterance;
 }
 
 export function speakJapanese(text, enabled = true) {
-  if (!enabled || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(createUtterance(text, "ja-JP"));
+  const speechSynthesis = getSpeechSynthesis();
+  if (!enabled || !speechSynthesis) return;
+  speechSynthesis.cancel();
+  let retryWithoutVoice = true;
+  const speakCurrent = (usePreferredVoice) => {
+    const utterance = createUtterance(text, "ja-JP", usePreferredVoice);
+    utterance.onerror = () => {
+      if (!retryWithoutVoice) return;
+      retryWithoutVoice = false;
+      speechSynthesis.cancel();
+      speakCurrent(false);
+    };
+    speechSynthesis.speak(utterance);
+  };
+  speakCurrent(true);
 }
 
 export function speakSequence(words, enabled = true, onComplete = () => {}) {
-  if (!enabled || !("speechSynthesis" in window)) return () => {};
+  const speechSynthesis = getSpeechSynthesis();
+  if (!enabled || !speechSynthesis) return () => {};
   const sequence = buildSpeechSequence(words);
   let cursor = 0;
   let stopped = false;
@@ -51,20 +104,39 @@ export function speakSequence(words, enabled = true, onComplete = () => {}) {
       return;
     }
     const item = sequence[cursor];
-    const utterance = createUtterance(item.text, item.lang);
-    const continueSequence = () => {
-      cursor += 1;
-      speakNext();
+    let retryWithoutVoice = true;
+
+    const speakCurrent = (usePreferredVoice) => {
+      const utterance = createUtterance(item.text, item.lang, usePreferredVoice);
+      let finished = false;
+      const continueSequence = () => {
+        if (finished) return;
+        finished = true;
+        cursor += 1;
+        speakNext();
+      };
+      utterance.onend = continueSequence;
+      utterance.onerror = () => {
+        if (finished) return;
+        if (retryWithoutVoice) {
+          finished = true;
+          retryWithoutVoice = false;
+          speechSynthesis.cancel();
+          speakCurrent(false);
+          return;
+        }
+        continueSequence();
+      };
+      speechSynthesis.speak(utterance);
     };
-    utterance.onend = continueSequence;
-    utterance.onerror = continueSequence;
-    window.speechSynthesis.speak(utterance);
+
+    speakCurrent(true);
   };
 
-  window.speechSynthesis.cancel();
+  speechSynthesis.cancel();
   speakNext();
   return () => {
     stopped = true;
-    window.speechSynthesis.cancel();
+    speechSynthesis.cancel();
   };
 }

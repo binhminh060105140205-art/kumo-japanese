@@ -3,7 +3,7 @@ import { renderProgressDots } from "./ProgressDots.js";
 import { renderDirectionToggle } from "./DirectionToggle.js";
 
 function renderSpeakerButton(word) {
-  return `<button class="sound-button flashcard-sound" type="button" data-speak="${escapeHtml(word.japanese)}" aria-label="Nghe phát âm"><svg class="speaker-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"></path><path d="M16 9.5c.75.7 1.2 1.54 1.2 2.5s-.45 1.8-1.2 2.5M18.6 7c1.4 1.35 2.2 3.04 2.2 5s-.8 3.65-2.2 5"></path></svg></button>`;
+  return `<button class="sound-button flashcard-sound" type="button" data-speak="${escapeHtml(word.kana || word.japanese)}" aria-label="Nghe phát âm"><svg class="speaker-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"></path><path d="M16 9.5c.75.7 1.2 1.54 1.2 2.5s-.45 1.8-1.2 2.5M18.6 7c1.4 1.35 2.2 3.04 2.2 5s-.8 3.65-2.2 5"></path></svg></button>`;
 }
 
 function renderJapaneseWord(word) {
