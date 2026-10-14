@@ -161,6 +161,86 @@ test("speakSequence waits for voiceschanged before speaking", () => {
   delete globalThis.SpeechSynthesisUtterance;
 });
 
+test("speakSequence waits for a Vietnamese voice when Japanese is already available", () => {
+  const spoken = [];
+  let voices = [{ lang: "ja-JP", name: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }];
+  let voicesChanged;
+  globalThis.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text;
+      this.lang = "";
+      this.voice = null;
+    }
+  };
+  globalThis.window = {
+    speechSynthesis: {
+      cancel() {},
+      getVoices() {
+        return voices;
+      },
+      addEventListener(event, listener) {
+        if (event === "voiceschanged") voicesChanged = listener;
+      },
+      removeEventListener() {},
+      speak(utterance) {
+        spoken.push({ lang: utterance.lang, text: utterance.text, voice: utterance.voice?.name ?? null });
+        utterance.onend();
+      }
+    }
+  };
+
+  speakSequence([{ id: 1, japanese: "食べます", kana: "たべます", meaning: "Ăn" }]);
+  assert.deepEqual(spoken, [
+    { lang: "ja-JP", text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }
+  ]);
+
+  voices = [
+    { lang: "ja-JP", name: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+    { lang: "vi-VN", name: "Microsoft An - Vietnamese (Vietnam)" }
+  ];
+  voicesChanged();
+
+  assert.deepEqual(spoken, [
+    { lang: "ja-JP", text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+    { lang: "vi-VN", text: "Ăn", voice: "Microsoft An - Vietnamese (Vietnam)" }
+  ]);
+  delete globalThis.window;
+  delete globalThis.SpeechSynthesisUtterance;
+});
+
+test("speakSequence uses a Vietnamese language fallback when no voice matches", () => {
+  const spoken = [];
+  globalThis.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text;
+      this.lang = "";
+      this.rate = 0;
+      this.pitch = 0;
+      this.voice = null;
+    }
+  };
+  globalThis.window = {
+    speechSynthesis: {
+      cancel() {},
+      getVoices() {
+        return [{ lang: "ja-JP", name: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }];
+      },
+      speak(utterance) {
+        spoken.push({ lang: utterance.lang, text: utterance.text, voice: utterance.voice?.name ?? null });
+        utterance.onend();
+      }
+    }
+  };
+
+  speakSequence([{ id: 1, japanese: "食べます", kana: "たべます", meaning: "An" }]);
+
+  assert.deepEqual(spoken, [
+    { lang: "ja-JP", text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+    { lang: "vi-VN", text: "An", voice: null }
+  ]);
+  delete globalThis.window;
+  delete globalThis.SpeechSynthesisUtterance;
+});
 test("speakSequence falls back to a Vietnamese voice instead of the browser default", () => {
   const spoken = [];
   globalThis.SpeechSynthesisUtterance = class {
@@ -227,7 +307,7 @@ test("speakSequence identifies a Vietnamese voice by name when its lang metadata
   delete globalThis.SpeechSynthesisUtterance;
 });
 
-test("speakSequence skips a language when no matching voice is available", () => {
+test("speakSequence uses a language-tagged fallback when no matching voice is available", () => {
   const spoken = [];
   globalThis.SpeechSynthesisUtterance = class {
     constructor(text) {
@@ -244,8 +324,6 @@ test("speakSequence skips a language when no matching voice is available", () =>
       getVoices() {
         return [{ lang: "ja-JP", name: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }];
       },
-      addEventListener() {},
-      removeEventListener() {},
       speak(utterance) {
         spoken.push({ lang: utterance.lang, text: utterance.text, voice: utterance.voice?.name ?? null });
         utterance.onend();
@@ -256,7 +334,8 @@ test("speakSequence skips a language when no matching voice is available", () =>
   speakSequence([{ id: 1, japanese: "食べます", kana: "たべます", meaning: "Ăn" }]);
 
   assert.deepEqual(spoken, [
-    { lang: "ja-JP", text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }
+    { lang: "ja-JP", text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+    { lang: "vi-VN", text: "Ăn", voice: null }
   ]);
   delete globalThis.window;
   delete globalThis.SpeechSynthesisUtterance;
@@ -289,7 +368,8 @@ test("speakSequence falls back to a Japanese voice when no female voice is ident
   speakSequence([{ id: 1, japanese: "アメリカ", kana: "アメリカ", meaning: "Mỹ" }]);
 
   assert.deepEqual(spoken, [
-    { lang: "ja-JP", voice: "Microsoft Ayumi - Japanese (Japan)" }
+    { lang: "ja-JP", voice: "Microsoft Ayumi - Japanese (Japan)" },
+    { lang: "vi-VN", voice: null }
   ]);
   delete globalThis.window;
   delete globalThis.SpeechSynthesisUtterance;
@@ -375,7 +455,8 @@ test("speakSequence retries a failed Japanese voice once without the selected vo
   speakSequence([{ id: 1, japanese: "食べます", kana: "たべます", meaning: "Ăn" }]);
 
   assert.deepEqual(spoken, [
-    { text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" }
+    { text: "たべます", voice: "Microsoft Nanami Online (Natural) - Japanese (Japan)" },
+    { text: "Ăn", voice: null }
   ]);
   delete globalThis.window;
   delete globalThis.SpeechSynthesisUtterance;

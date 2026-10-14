@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "audit:data": "node scripts/audit-jpd-vocabulary.mjs",
     "test:speech": "node --test scripts/speech-sequence.test.mjs",
-    "test:practice": "node --test scripts/practice-session.test.mjs scripts/flashcard-layout.test.mjs"
+    "test:practice": "node --test scripts/practice-session.test.mjs scripts/flashcard-layout.test.mjs scripts/flashcard-render.test.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.7"

@@ -41,29 +41,43 @@ function getVoices(speechSynthesis) {
   return speechSynthesis.getVoices().filter(Boolean);
 }
 
-function waitForVoices(speechSynthesis, onReady) {
+function hasVoiceForLanguage(voices, lang) {
+  if (!voices) return false;
+  return lang ? voices.some(voice => matchesLanguage(voice, lang)) : voices.length > 0;
+}
+
+function waitForVoices(speechSynthesis, onReady, lang = null) {
   const initialVoices = getVoices(speechSynthesis);
-  if (!initialVoices || initialVoices.length || typeof speechSynthesis.addEventListener !== "function") {
+  if (!initialVoices || hasVoiceForLanguage(initialVoices, lang) || typeof speechSynthesis.addEventListener !== "function") {
     onReady();
     return () => {};
   }
 
   let active = true;
   let timeoutId;
+  const check = () => {
+    if (!active) return;
+    if (!hasVoiceForLanguage(getVoices(speechSynthesis), lang)) return;
+    active = false;
+    if (timeoutId) clearTimeout(timeoutId);
+    speechSynthesis.removeEventListener?.("voiceschanged", check);
+    onReady();
+  };
+
   const finish = () => {
     if (!active) return;
     active = false;
     if (timeoutId) clearTimeout(timeoutId);
-    speechSynthesis.removeEventListener?.("voiceschanged", finish);
+    speechSynthesis.removeEventListener?.("voiceschanged", check);
     onReady();
   };
 
-  speechSynthesis.addEventListener("voiceschanged", finish, { once: true });
+  speechSynthesis.addEventListener("voiceschanged", check);
   timeoutId = setTimeout(finish, 1500);
   return () => {
     active = false;
     if (timeoutId) clearTimeout(timeoutId);
-    speechSynthesis.removeEventListener?.("voiceschanged", finish);
+    speechSynthesis.removeEventListener?.("voiceschanged", check);
   };
 }
 
@@ -155,19 +169,21 @@ export function speakSequence(words, enabled = true, onComplete = () => {}) {
     }
     const item = sequence[cursor];
     const candidates = getVoiceCandidates(item.lang);
+    if (candidates && !candidates.length && !voiceWaitFinishedForCursor) {
+      stopWaiting = waitForVoices(speechSynthesis, () => {
+        voiceWaitFinishedForCursor = true;
+        speakNext();
+      }, item.lang);
+      return;
+    }
     if (candidates && !candidates.length) {
-      const availableVoices = getVoices(speechSynthesis);
-      if (availableVoices?.length || voiceWaitFinishedForCursor || typeof speechSynthesis.addEventListener !== "function") {
+      if (item.lang !== "vi-VN") {
         voiceWaitFinishedForCursor = false;
         cursor += 1;
         speakNext();
         return;
       }
-      stopWaiting = waitForVoices(speechSynthesis, () => {
-        voiceWaitFinishedForCursor = true;
-        speakNext();
-      });
-      return;
+      voiceWaitFinishedForCursor = false;
     }
     let voiceIndex = 0;
 
