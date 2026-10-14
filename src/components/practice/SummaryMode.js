@@ -1,7 +1,7 @@
 import { escapeHtml } from "../../utils/dom.js";
 
 function renderSummaryRow(word, index) {
-  return `<div class="summary-row" data-summary-word="${escapeHtml(word.id)}"><span class="summary-index">${index + 1}</span><div class="summary-japanese"><strong>${escapeHtml(word.japanese)}</strong><span>${escapeHtml(word.kana || "")}</span></div><div class="summary-meaning"><strong>${escapeHtml(word.meaning)}</strong><span>${escapeHtml(word.romaji || "")}</span></div><span class="lesson-tag">Bài ${word.lesson}</span><button class="sound-button summary-sound" type="button" data-speak="${escapeHtml(word.kana || word.japanese)}" aria-label="Nghe ${escapeHtml(word.japanese)}">◖</button></div>`;
+  return `<div class="summary-row" data-summary-word="${escapeHtml(word.id)}"><span class="summary-index">${index + 1}</span><div class="summary-japanese"><strong>${escapeHtml(word.japanese)}</strong><span>${escapeHtml(word.kana || "")}</span></div><div class="summary-meaning"><strong>${escapeHtml(word.meaning)}</strong><span>${escapeHtml(word.romaji || "")}</span></div><span class="lesson-tag">Bài ${word.lesson}</span><button class="sound-button summary-sound" type="button" data-speak="${escapeHtml(word.kana || "")}" aria-label="Nghe ${escapeHtml(word.japanese)}">◖</button></div>`;
 }
 
 export function renderSummary({ words, isPlaying = false }) {

@@ -7,7 +7,7 @@ export function renderQuiz({ question, index, options, answered, total, daily, d
   const hint = daily ? "5 từ ngẫu nhiên trong kho · có cả chữ Hán" : "Chọn đáp án đúng";
   const answerIsJapanese = direction === "vi-to-jp";
   const prompt = direction === "audio-to-vi"
-    ? `<span class="prompt-label">Nghe và chọn nghĩa đúng</span><button class="quiz-audio-button" data-speak="${escapeHtml(question.kana || question.japanese)}" aria-label="Nghe từ tiếng Nhật">▶ Nghe từ</button>`
+    ? `<span class="prompt-label">Nghe và chọn nghĩa đúng</span><button class="quiz-audio-button" data-speak="${escapeHtml(question.kana || "")}" aria-label="Nghe từ tiếng Nhật">▶ Nghe từ</button>`
     : answerIsJapanese
       ? `<span class="prompt-label">Từ tiếng Việt này là gì?</span><h3>${escapeHtml(question.meaning)}</h3>`
       : `<span class="prompt-label">Từ này có nghĩa là gì?</span><h3 class="prompt-japanese">${escapeHtml(question.japanese)}</h3><div class="prompt-kana">${escapeHtml(question.kana)}</div>`;
