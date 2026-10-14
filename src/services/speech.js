@@ -57,8 +57,9 @@ function getPreferredVoice(lang) {
   const speechSynthesis = getSpeechSynthesis();
   if (!speechSynthesis || typeof speechSynthesis.getVoices !== "function") return null;
   const voices = speechSynthesis.getVoices().filter(voice => matchesLanguage(voice, lang));
-  return [...voices]
-    .filter(voice => isFemaleVoice(voice, lang))
+  const femaleVoices = voices.filter(voice => isFemaleVoice(voice, lang));
+  const candidates = femaleVoices.length ? femaleVoices : voices;
+  return [...candidates]
     .sort((first, second) => scoreVoice(second, lang) - scoreVoice(first, lang))[0] || null;
 }
 

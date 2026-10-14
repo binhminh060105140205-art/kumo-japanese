@@ -114,7 +114,7 @@ test("speakSequence prefers female voices for Japanese and Vietnamese", () => {
   delete globalThis.SpeechSynthesisUtterance;
 });
 
-test("speakSequence does not select an unverified Vietnamese voice as female", () => {
+test("speakSequence falls back to a Vietnamese voice instead of the browser default", () => {
   const spoken = [];
   globalThis.SpeechSynthesisUtterance = class {
     constructor(text) {
@@ -142,6 +142,40 @@ test("speakSequence does not select an unverified Vietnamese voice as female", (
 
   assert.deepEqual(spoken, [
     { lang: "ja-JP", voice: null },
+    { lang: "vi-VN", voice: "Microsoft An Online" }
+  ]);
+  delete globalThis.window;
+  delete globalThis.SpeechSynthesisUtterance;
+});
+
+test("speakSequence falls back to a Japanese voice when no female voice is identified", () => {
+  const spoken = [];
+  globalThis.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text;
+      this.lang = "";
+      this.rate = 0;
+      this.pitch = 0;
+      this.voice = null;
+    }
+  };
+  globalThis.window = {
+    speechSynthesis: {
+      cancel() {},
+      getVoices() {
+        return [{ lang: "ja-JP", name: "Microsoft Ayumi - Japanese (Japan)" }];
+      },
+      speak(utterance) {
+        spoken.push({ lang: utterance.lang, voice: utterance.voice?.name ?? null });
+        utterance.onend();
+      }
+    }
+  };
+
+  speakSequence([{ id: 1, japanese: "アメリカ", kana: "アメリカ", meaning: "Mỹ" }]);
+
+  assert.deepEqual(spoken, [
+    { lang: "ja-JP", voice: "Microsoft Ayumi - Japanese (Japan)" },
     { lang: "vi-VN", voice: null }
   ]);
   delete globalThis.window;
