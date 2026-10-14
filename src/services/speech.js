@@ -3,14 +3,10 @@ const femaleVoiceHintsByLanguage = {
   vi: /female|woman|girl|hoai ?my|hoài ?my|linh|mai|google.*(tiếng việt|vietnamese)|microsoft.*(hoai ?my|linh|mai)/i
 };
 const maleVoiceHints = /\bmale\b|\bman\b|\bichiro\b|\botoya\b|\bnam[\s_-]*minh\b/i;
-const languageNameHints = {
-  ja: /japanese|日本語|日本|ayumi|haruka|ichiro|nanami|sayaka|kyoko/i,
-  vi: /vietnamese|tiếng việt|việt nam|hoai ?my|hoài ?my|nam[\s_-]*minh|microsoft\s+an\b|google\s+tiếng việt/i
-};
 
 export function buildSpeechSequence(words) {
   return words.flatMap(word => {
-    const japaneseText = normalizeJapaneseSpeech(word.kana);
+    const japaneseText = normalizeJapaneseSpeech(word.kana || word.japanese);
     return [
       japaneseText ? { wordId: word.id, lang: "ja-JP", text: japaneseText } : null,
       word.meaning ? { wordId: word.id, lang: "vi-VN", text: word.meaning } : null
@@ -36,58 +32,11 @@ function getSpeechSynthesis() {
   return window.speechSynthesis;
 }
 
-function getVoices(speechSynthesis) {
-  if (!speechSynthesis || typeof speechSynthesis.getVoices !== "function") return null;
-  return speechSynthesis.getVoices().filter(Boolean);
-}
-
-function hasVoiceForLanguage(voices, lang) {
-  if (!voices) return false;
-  return lang ? voices.some(voice => matchesLanguage(voice, lang)) : voices.length > 0;
-}
-
-function waitForVoices(speechSynthesis, onReady, lang = null) {
-  const initialVoices = getVoices(speechSynthesis);
-  if (!initialVoices || hasVoiceForLanguage(initialVoices, lang) || typeof speechSynthesis.addEventListener !== "function") {
-    onReady();
-    return () => {};
-  }
-
-  let active = true;
-  let timeoutId;
-  const check = () => {
-    if (!active) return;
-    if (!hasVoiceForLanguage(getVoices(speechSynthesis), lang)) return;
-    active = false;
-    if (timeoutId) clearTimeout(timeoutId);
-    speechSynthesis.removeEventListener?.("voiceschanged", check);
-    onReady();
-  };
-
-  const finish = () => {
-    if (!active) return;
-    active = false;
-    if (timeoutId) clearTimeout(timeoutId);
-    speechSynthesis.removeEventListener?.("voiceschanged", check);
-    onReady();
-  };
-
-  speechSynthesis.addEventListener("voiceschanged", check);
-  timeoutId = setTimeout(finish, 1500);
-  return () => {
-    active = false;
-    if (timeoutId) clearTimeout(timeoutId);
-    speechSynthesis.removeEventListener?.("voiceschanged", check);
-  };
-}
-
 function matchesLanguage(voice, lang) {
   const voiceLang = String(voice.lang || "").toLowerCase();
   const normalizedLang = lang.toLowerCase();
   const prefix = normalizedLang.slice(0, 2);
-  if (voiceLang === normalizedLang || voiceLang === prefix || voiceLang.startsWith(prefix + "-") || voiceLang.startsWith(prefix + "_")) return true;
-  const voiceDetails = String(voice.name || "") + " " + String(voice.voiceURI || "");
-  return Boolean(languageNameHints[prefix]?.test(voiceDetails));
+  return voiceLang === normalizedLang || voiceLang === prefix || voiceLang.startsWith(prefix + "-") || voiceLang.startsWith(prefix + "_");
 }
 
 function isFemaleVoice(voice, lang) {
@@ -104,20 +53,22 @@ function scoreVoice(voice, lang) {
   return score;
 }
 
-function getVoiceCandidates(lang) {
+function getPreferredVoice(lang) {
   const speechSynthesis = getSpeechSynthesis();
-  const voices = getVoices(speechSynthesis);
-  if (!voices) return null;
-  const matchingVoices = voices.filter(voice => matchesLanguage(voice, lang));
-  return [...matchingVoices].sort((first, second) => scoreVoice(second, lang) - scoreVoice(first, lang));
+  if (!speechSynthesis || typeof speechSynthesis.getVoices !== "function") return null;
+  const voices = speechSynthesis.getVoices().filter(voice => matchesLanguage(voice, lang));
+  return [...voices]
+    .filter(voice => isFemaleVoice(voice, lang))
+    .sort((first, second) => scoreVoice(second, lang) - scoreVoice(first, lang))[0] || null;
 }
 
-function createUtterance(text, lang, voice = null) {
+function createUtterance(text, lang, usePreferredVoice = true) {
   const speechText = lang === "ja-JP" ? normalizeJapaneseSpeech(text) : String(text || "").trim();
   const utterance = new SpeechSynthesisUtterance(speechText);
   utterance.lang = lang;
   utterance.rate = lang === "ja-JP" ? 0.84 : 0.9;
   utterance.pitch = 1.12;
+  const voice = usePreferredVoice ? getPreferredVoice(lang) : null;
   if (voice) utterance.voice = voice;
   return utterance;
 }
@@ -126,31 +77,18 @@ export function speakJapanese(text, enabled = true) {
   const speechSynthesis = getSpeechSynthesis();
   if (!enabled || !speechSynthesis) return;
   speechSynthesis.cancel();
-  let stopped = false;
-  let stopWaiting = () => {};
-
-  const start = () => {
-    if (stopped) return;
-    const candidates = getVoiceCandidates("ja-JP");
-    if (candidates && !candidates.length) return;
-    let voiceIndex = 0;
-    const speakCurrent = () => {
-      if (stopped) return;
-      const voice = candidates?.[voiceIndex] || null;
-      const utterance = createUtterance(text, "ja-JP", voice);
-      utterance.onerror = () => {
-        if (candidates && voiceIndex + 1 < candidates.length) {
-          voiceIndex += 1;
-          speechSynthesis.cancel();
-          speakCurrent();
-        }
-      };
-      speechSynthesis.speak(utterance);
+  let retryWithoutVoice = true;
+  const speakCurrent = (usePreferredVoice) => {
+    const utterance = createUtterance(text, "ja-JP", usePreferredVoice);
+    utterance.onerror = () => {
+      if (!retryWithoutVoice) return;
+      retryWithoutVoice = false;
+      speechSynthesis.cancel();
+      speakCurrent(false);
     };
-    speakCurrent();
+    speechSynthesis.speak(utterance);
   };
-
-  stopWaiting = waitForVoices(speechSynthesis, start);
+  speakCurrent(true);
 }
 
 export function speakSequence(words, enabled = true, onComplete = () => {}) {
@@ -159,8 +97,6 @@ export function speakSequence(words, enabled = true, onComplete = () => {}) {
   const sequence = buildSpeechSequence(words);
   let cursor = 0;
   let stopped = false;
-  let stopWaiting = () => {};
-  let voiceWaitFinishedForCursor = false;
 
   const speakNext = () => {
     if (stopped || cursor >= sequence.length) {
@@ -168,45 +104,25 @@ export function speakSequence(words, enabled = true, onComplete = () => {}) {
       return;
     }
     const item = sequence[cursor];
-    const candidates = getVoiceCandidates(item.lang);
-    if (candidates && !candidates.length && !voiceWaitFinishedForCursor) {
-      stopWaiting = waitForVoices(speechSynthesis, () => {
-        voiceWaitFinishedForCursor = true;
-        speakNext();
-      }, item.lang);
-      return;
-    }
-    if (candidates && !candidates.length) {
-      if (item.lang !== "vi-VN") {
-        voiceWaitFinishedForCursor = false;
-        cursor += 1;
-        speakNext();
-        return;
-      }
-      voiceWaitFinishedForCursor = false;
-    }
-    let voiceIndex = 0;
+    let retryWithoutVoice = true;
 
-    const speakCurrent = () => {
-      if (stopped) return;
-      const voice = candidates?.[voiceIndex] || null;
-      const utterance = createUtterance(item.text, item.lang, voice);
+    const speakCurrent = (usePreferredVoice) => {
+      const utterance = createUtterance(item.text, item.lang, usePreferredVoice);
       let finished = false;
       const continueSequence = () => {
         if (finished) return;
         finished = true;
-        voiceWaitFinishedForCursor = false;
         cursor += 1;
         speakNext();
       };
       utterance.onend = continueSequence;
       utterance.onerror = () => {
         if (finished) return;
-        if (candidates && voiceIndex + 1 < candidates.length) {
+        if (retryWithoutVoice) {
           finished = true;
-          voiceIndex += 1;
+          retryWithoutVoice = false;
           speechSynthesis.cancel();
-          speakCurrent();
+          speakCurrent(false);
           return;
         }
         continueSequence();
@@ -214,14 +130,13 @@ export function speakSequence(words, enabled = true, onComplete = () => {}) {
       speechSynthesis.speak(utterance);
     };
 
-    speakCurrent();
+    speakCurrent(true);
   };
 
   speechSynthesis.cancel();
   speakNext();
   return () => {
     stopped = true;
-    stopWaiting();
     speechSynthesis.cancel();
   };
 }
