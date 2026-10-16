@@ -14,7 +14,7 @@ export function createApp(root) {
   const store = createStore();
   const router = createRouter(render);
   const practice = new PracticeSession(store);
-  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all", wordLimit: Number(store.getState().practiceWordLimit) || 0 }, toastTimer: null };
+  const ui = { libraryQuery: "", libraryFilter: "Tất cả", libraryCategory: "all", practice: { query: "", lesson: [], category: "all", kanjiMode: "single", wordLimit: Number(store.getState().practiceWordLimit) || 0 }, toastTimer: null };
 
   function getScreen() {
     const view = router.getCurrentView();
@@ -105,6 +105,14 @@ export function createApp(root) {
     const direction = event.target.closest("[data-practice-direction]");
     if (direction) {
       practice.setDirection(direction.dataset.practiceDirection, direction.dataset.direction);
+      render();
+      return;
+    }
+
+    const kanjiMode = event.target.closest("[data-practice-kanji-mode]");
+    if (kanjiMode) {
+      ui.practice.kanjiMode = kanjiMode.dataset.practiceKanjiMode;
+      practice.setFilters(ui.practice);
       render();
       return;
     }

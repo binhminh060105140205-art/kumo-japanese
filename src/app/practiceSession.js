@@ -5,6 +5,7 @@ import { renderMatch } from "../components/practice/MatchMode.js";
 import { renderPracticeComplete, renderPracticeEmpty } from "../components/practice/EmptyMode.js";
 import { DAILY_QUIZ_SIZE } from "./store.js";
 import { FlashcardQueue } from "./flashcardQueue.js";
+import { getKanjiCompoundWords } from "./kanjiStudy.js";
 import { normalize } from "../utils/dom.js";
 
 function shuffle(items) {
@@ -30,7 +31,7 @@ export class PracticeSession {
     this.flashcardQueue = new FlashcardQueue([]);
     this.flashcardTotal = 0;
     this.flashcardCompleted = false;
-    this.filters = { category: "all", lesson: "Tất cả", query: "", wordLimit: Number(store.getState().practiceWordLimit) || 0 };
+    this.filters = { category: "all", kanjiMode: "single", lesson: "Tất cả", query: "", wordLimit: Number(store.getState().practiceWordLimit) || 0 };
     this.refreshWordPool();
     this.resetFlashcardSession();
   }
@@ -79,6 +80,7 @@ export class PracticeSession {
   }
 
   getFilteredWords() {
+    if (this.filters.category === "kanji" && this.filters.kanjiMode === "compounds") return getKanjiCompoundWords(this.store.getWords(), this.filters);
     const selectedLessons = new Set(Array.isArray(this.filters.lesson) ? this.filters.lesson : this.filters.lesson && this.filters.lesson !== "Tất cả" ? [this.filters.lesson] : []);
     const query = normalize(this.filters.query);
     return this.store.getWords().filter(word => (this.filters.category === "all" || word.category === this.filters.category) && (!selectedLessons.size || selectedLessons.has(`Bài ${word.lesson}`)) && normalize(word.japanese + " " + word.kana + " " + word.romaji + " " + word.meaning).includes(query));

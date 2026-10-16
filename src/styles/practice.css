@@ -20,6 +20,8 @@
 .practice-picker-filters { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px; }
 .practice-filter-block > small { display: block; margin: 0 0 6px 2px; color: var(--muted-2); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
 .practice-picker-note { margin: 0; color: var(--muted-2); font-size: 10px; }
+.kanji-study-options { padding-top: 2px; }
+.kanji-study-options .filter-group { flex-wrap: wrap; }
 .practice-empty { display: grid; place-items: center; min-height: 405px; text-align: center; }
 .practice-stage { width: min(100%, 1080px); margin: 0 auto; }
 .practice-empty .win-icon { color: var(--lavender); font-size: 42px; }
