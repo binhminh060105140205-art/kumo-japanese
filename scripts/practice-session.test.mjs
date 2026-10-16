@@ -1,7 +1,10 @@
+import fs from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { FlashcardQueue } from "../src/app/flashcardQueue.js";
 import { getKanjiCompoundWords } from "../src/app/kanjiStudy.js";
+
+const initialVocabulary = JSON.parse(fs.readFileSync(new URL("../src/data/jpd-vocabulary.json", import.meta.url), "utf8"));
 
 test("flashcards show every unseen word before retrying a missed word", () => {
   const words = [{ id: 1 }, { id: 2 }, { id: 3 }];
@@ -70,4 +73,24 @@ test("kanji compound mode ignores duplicate kanji rows", () => {
 
   assert.equal(new Set(result.map(word => word.kanjiSource)).size, 1);
   assert.ok(result.length >= 2 && result.length <= 3);
+});
+
+test("kanji data includes the lesson 4 to 7 study sets", () => {
+  const expected = {
+    4: ["東", "京", "名", "前", "国", "男", "女", "区", "市"],
+    5: ["先", "週", "毎", "午", "後", "見", "食", "飲", "買", "物", "行", "休"],
+    6: ["今", "来", "帰", "会", "国", "社", "聞", "新", "読", "書", "話", "寺", "言", "貝", "田", "力", "水", "火", "門"],
+    7: ["肉", "料", "理", "野", "半", "大", "小"]
+  };
+
+  const lessonKanji = initialVocabulary.filter(word => word.category === "kanji" && word.lesson >= 4 && word.lesson <= 7);
+  assert.equal(lessonKanji.length, 47);
+  assert.ok(lessonKanji.every(word => word.kana && word.meaning && word.example));
+
+  for (const [lesson, characters] of Object.entries(expected)) {
+    assert.deepEqual(
+      initialVocabulary.filter(word => word.category === "kanji" && word.lesson === Number(lesson)).map(word => word.japanese),
+      characters
+    );
+  }
 });

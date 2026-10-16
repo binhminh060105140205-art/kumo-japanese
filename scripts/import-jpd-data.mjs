@@ -30,6 +30,56 @@ const kanjiMeanings = {
   家: "Nhà / gia đình", 族: "Gia tộc / gia đình", 父: "Cha / bố", 母: "Mẹ", 兄: "Anh trai", 弟: "Em trai", 姉: "Chị gái", 妹: "Em gái", 犬: "Chó", 短: "Ngắn", 長: "Dài / người đứng đầu", 好: "Thích", 歌: "Bài hát", 音: "Âm thanh", 楽: "Vui / âm nhạc", 車: "Xe", 映: "Chiếu / phim", 画: "Tranh / hình ảnh", 旅: "Chuyến đi", 海: "Biển", 外: "Bên ngoài / nước ngoài", 駅: "Nhà ga", 上: "Trên", 下: "Dưới", 地: "Đất / địa điểm", 図: "Bản đồ / hình vẽ", 館: "Tòa nhà", 右: "Bên phải", 左: "Bên trái", 道: "Đường", 起: "Thức dậy", 歩: "Đi bộ", 乗: "Lên xe", 始: "Bắt đầu", 終: "Kết thúc", 勉: "Siêng học", 強: "Mạnh", 朝: "Buổi sáng", 昼: "Buổi trưa", 夜: "Ban đêm"
 };
 
+const kanji123Entries = [
+  [4, "東", "トウ／ひがし", "Phía đông", "東京"],
+  [4, "京", "キョウ", "Kinh đô / Tokyo", "東京"],
+  [4, "名", "メイ／な", "Tên / danh tiếng", "名人"],
+  [4, "前", "ゼン／まえ", "Phía trước", "名前"],
+  [4, "国", "コク／くに", "Đất nước", "国語"],
+  [4, "男", "ダン／おとこ", "Đàn ông / con trai", "男の人"],
+  [4, "女", "ジョ／おんな", "Phụ nữ / con gái", "女の人"],
+  [4, "区", "ク", "Khu / quận", "～区"],
+  [4, "市", "シ", "Thành phố / chợ", "～市"],
+  [5, "先", "セン／さき", "Trước; trước đây", "先週"],
+  [5, "週", "シュウ", "Tuần", "先週"],
+  [5, "毎", "マイ", "Mỗi", "毎日"],
+  [5, "午", "ゴ", "Buổi trưa; giờ ngọ", "午前"],
+  [5, "後", "ゴ／うしろ・あと", "Sau; phía sau", "午後"],
+  [5, "見", "ケン／みる", "Xem; nhìn", "見学"],
+  [5, "食", "ショク／たべる", "Ăn; thực phẩm", "食べ物"],
+  [5, "飲", "イン／のむ", "Uống", "飲み物"],
+  [5, "買", "バイ／かう", "Mua", "買い物"],
+  [5, "物", "ブツ／もの", "Vật; đồ vật", "買い物"],
+  [5, "行", "コウ／いく", "Đi", "行きます"],
+  [5, "休", "キュウ／やすむ", "Nghỉ", "休日"],
+  [6, "今", "コン／いま", "Bây giờ; nay", "今週"],
+  [6, "来", "ライ／くる", "Đến; tương lai", "来週"],
+  [6, "帰", "キ／かえる", "Về; trở về", "帰国"],
+  [6, "会", "カイ／あう", "Gặp; hội", "会見"],
+  [6, "国", "コク／くに", "Đất nước", "国会"],
+  [6, "社", "シャ／やしろ", "Công ty; xã hội", "会社"],
+  [6, "聞", "ブン・モン／きく", "Nghe; hỏi", "聞きます"],
+  [6, "新", "シン／あたらしい", "Mới", "新聞"],
+  [6, "読", "ドク／よむ", "Đọc", "読書"],
+  [6, "書", "ショ／かく", "Viết; sách", "書きます"],
+  [6, "話", "ワ／はなす", "Nói chuyện; câu chuyện", "話します"],
+  [6, "寺", "ジ／てら", "Chùa", "お寺"],
+  [6, "言", "ゲン・ゴン／いう", "Nói; lời nói", "言語"],
+  [6, "貝", "バイ／かい", "Sò; hến", "貝"],
+  [6, "田", "デン／た", "Ruộng", "田中さん"],
+  [6, "力", "リョク・リキ／ちから", "Sức lực", "水力"],
+  [6, "水", "スイ／みず", "Nước", "水田"],
+  [6, "火", "カ／ひ", "Lửa", "火力"],
+  [6, "門", "モン／かど", "Cổng", "門"],
+  [7, "肉", "ニク", "Thịt", "牛肉"],
+  [7, "料", "リョウ", "Vật liệu; phí; nguyên liệu", "料金"],
+  [7, "理", "リ", "Lý lẽ; nấu ăn", "料理"],
+  [7, "野", "ヤ／の", "Cánh đồng; hoang dã", "野菜"],
+  [7, "半", "ハン／なかば", "Một nửa", "半分"],
+  [7, "大", "ダイ・タイ／おおきい", "To; lớn", "大学"],
+  [7, "小", "ショウ／ちいさい", "Nhỏ", "小学校"]
+];
+
 function toNumber(value) {
   return Number([...value].map(character => {
     const index = "０１２３４５６７８９".indexOf(character);
@@ -107,12 +157,13 @@ function parseKanji() {
   const handbook = JSON.parse(fs.readFileSync(handbookSource, "utf8"));
   const entries = [];
   let nextId = 10000;
-  const add = (lesson, character, reading, exampleWord) => {
-    entries.push({ id: nextId, category: "kanji", lesson, lessonTitle: lessonTitles[lesson] || `Bài ${lesson}`, japanese: character, kana: reading, romaji: "", baseForm: "", meaning: kanjiMeanings[character] || exampleWord, example: exampleWord, sourceLine: 0 });
+  const add = (lesson, character, reading, exampleWord, meaning = kanjiMeanings[character] || exampleWord) => {
+    entries.push({ id: nextId, category: "kanji", lesson, lessonTitle: lessonTitles[lesson] || `Bài ${lesson}`, japanese: character, kana: reading, romaji: "", baseForm: "", meaning, example: exampleWord, sourceLine: 0 });
     nextId += 1;
   };
   handbook.kanji113.forEach(([character, reading, exampleWord]) => add(kanji113Lessons[character] || 1, character, reading, exampleWord));
   handbook.kanji133.forEach(([lesson, character, reading, exampleWord]) => add(Number(lesson), character, reading, exampleWord));
+  kanji123Entries.forEach(([lesson, character, reading, meaning, exampleWord]) => add(lesson, character, reading, exampleWord, meaning));
   return entries;
 }
 
